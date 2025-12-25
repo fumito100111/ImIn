@@ -50,7 +50,7 @@ class RegisterButton(ctk.CTkButton):
     def __init__(self, master: RegisterTokensView, width: int, height: int, text: str, command: Callable[[], None] | None = None) -> None:
         super(RegisterButton, self).__init__(master=master, width=width, height=height, font=ctk.CTkFont(size=int(height / 3)), text=text, command=command)
 
-
+# トークン登録ビューのコンポーネント
 class RegisterTokensView(ctk.CTkFrame):
     master: App | SetupWindow
     root_dir: str
@@ -58,6 +58,7 @@ class RegisterTokensView(ctk.CTkFrame):
     bot_token_entry: RegisterEntry
     canvas_id_entry: RegisterEntry
     register_button: RegisterButton
+    id: str
     def __init__(self, master: App | SetupWindow, root_dir: str) -> None:
         super(RegisterTokensView, self).__init__(master=master, width=master.width, height=master.height)
         self.root_dir = root_dir
@@ -90,21 +91,16 @@ class RegisterTokensView(ctk.CTkFrame):
         self.register_button = RegisterButton(master=self, width=int(master.width * 0.2), height=int(master.height * 0.1), text='登録', command=self.register_tokens)
         self.register_button.place(relx=0.95, rely=0.95, anchor=ctk.SE)
 
-        # それぞれのエントリーが空白でない場合に登録ボタンを有効化 (ループで監視)
-        def _observe_entries() -> None:
-            bot_token: str = self.bot_token_entry.entry.get().strip()
-            canvas_id: str = self.canvas_id_entry.entry.get().strip()
-            if bot_token and canvas_id:
-                self.register_button.configure(state=ctk.NORMAL)
-            else:
-                self.register_button.configure(state=ctk.DISABLED)
-            self.after(100, _observe_entries)
-        _observe_entries()
+        # エントリーの監視を開始
+        self._observe_entries()
 
         # 最初のエントリーにフォーカスを設定
         self.bot_token_entry.entry.focus_set()
 
     def register_tokens(self, event: tk.Event | None = None) -> None:
+        # エントリー監視を停止
+        self.after_cancel(self.id)
+
         # 登録ボタンを無効化
         self.register_button.configure(state=ctk.DISABLED)
 
@@ -151,3 +147,16 @@ class RegisterTokensView(ctk.CTkFrame):
 
             # 最初のエントリーにフォーカスを設定
             self.bot_token_entry.entry.focus_set()
+
+            # エントリーの監視を再開
+            self._observe_entries()
+
+    # それぞれのエントリーが空白でない場合に登録ボタンを有効化 (ループで監視)
+    def _observe_entries(self) -> None:
+        bot_token: str = self.bot_token_entry.entry.get().strip()
+        canvas_id: str = self.canvas_id_entry.entry.get().strip()
+        if bot_token and canvas_id:
+            self.register_button.configure(state=ctk.NORMAL)
+        else:
+            self.register_button.configure(state=ctk.DISABLED)
+        self.id = self.after(100, self._observe_entries)
