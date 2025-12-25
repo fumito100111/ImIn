@@ -26,7 +26,7 @@ class SetupWindow(ctk.CTkToplevel):
         self.resizable(False, False)
 
         # トークン登録ビューの作成
-        RegisterTokensView(master=self).pack(fill=ctk.BOTH, expand=True)
+        RegisterTokensView(master=self, root_dir=self.master.root_dir).pack(fill=ctk.BOTH, expand=True)
 
         # イベントの設定
         self.protocol('WM_DELETE_WINDOW', self.destroy_all)

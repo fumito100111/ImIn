@@ -5,6 +5,9 @@ from slack_bolt import App as SlackApp
 from slack_sdk.web import SlackResponse
 from slack_sdk.errors import SlackApiError
 
+# SlackのセットアップについてのドキュメントURL
+SLACK_SETUP_DOCUMENT_URL: str = 'https://github.com/fumito100111/ImIn/blob/main/docs/SLACK_SETUP.md'
+
 # Slackのボットトークンのスコープ説明文
 SLACK_BOT_TOKEN_SCOPES_DESCRIPTION: str = '※ \'files:read\', \'canvases:write\'の権限が必要です.'
 
