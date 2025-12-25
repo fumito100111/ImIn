@@ -1,0 +1,9 @@
+[project]
+name = "ImIn"
+version = "0.0.0"
+dependencies = [
+    "customtkinter==5.2.2",
+    "slack-bolt==1.27.0",
+    "pyscard==2.3.1",
+    "keyring==25.7.0"
+]
