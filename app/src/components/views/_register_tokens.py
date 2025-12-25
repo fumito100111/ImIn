@@ -54,41 +54,43 @@ class RegisterButton(ctk.CTkButton):
 class RegisterTokensView(ctk.CTkFrame):
     master: App | SetupWindow
     root_dir: str
+    width: int
+    height: int
     help_label: ctk.CTkLabel
     bot_token_entry: RegisterEntry
     canvas_id_entry: RegisterEntry
     register_button: RegisterButton
     id: str
-    def __init__(self, master: App | SetupWindow, root_dir: str) -> None:
-        super(RegisterTokensView, self).__init__(master=master, width=master.width, height=master.height)
+    def __init__(self, master: App | SetupWindow, root_dir: str, width: int, height: int) -> None:
+        super(RegisterTokensView, self).__init__(master=master, width=width, height=height)
         self.root_dir = root_dir
 
         # Slackセットアップヘルプリンクの作成
         image: ctk.CTkImage = ctk.CTkImage(
             light_image=Image.open(f'{root_dir}/assets/icons/light/help.png'),
             dark_image=Image.open(f'{root_dir}/assets/icons/dark/help.png'),
-            size=(int(master.height * 0.03), int(master.height * 0.03))
+            size=(int(height * 0.03), int(height * 0.03))
         )
         self.help_label = ctk.CTkLabel(
             master=self,
             text='',
             image=image,
-            width=int(master.height * 0.05),
-            height=int(master.height * 0.05)
+            width=int(height * 0.05),
+            height=int(height * 0.05)
         )
         self.help_label.bind('<Button-1>', lambda event: webbrowser.open_new_tab(SLACK_SETUP_DOCUMENT_URL))
         self.help_label.place(relx=0.99, rely=0.01, anchor=ctk.NE)
 
         # Slackのボットトークンのエントリーを作成
-        self.bot_token_entry = RegisterEntry(master=self, width=master.width, height=int(master.height * 0.4), text='Slack Bot トークン', description=SLACK_BOT_TOKEN_SCOPES_DESCRIPTION, show="*")
+        self.bot_token_entry = RegisterEntry(master=self, width=width, height=int(height * 0.4), text='Slack Bot トークン', description=SLACK_BOT_TOKEN_SCOPES_DESCRIPTION, show="*")
         self.bot_token_entry.place(relx=0.5, rely=0.05, anchor=ctk.N)
 
         # CanvasのIDエントリーを作成
-        self.canvas_id_entry = RegisterEntry(master=self, width=master.width, height=int(master.height * 0.4), text='Canvas ID')
+        self.canvas_id_entry = RegisterEntry(master=self, width=width, height=int(height * 0.4), text='Canvas ID')
         self.canvas_id_entry.place(relx=0.5, rely=0.45, anchor=ctk.N)
 
         # 登録ボタンを作成
-        self.register_button = RegisterButton(master=self, width=int(master.width * 0.2), height=int(master.height * 0.1), text='登録', command=self.register_tokens)
+        self.register_button = RegisterButton(master=self, width=int(width * 0.2), height=int(height * 0.1), text='登録', command=self.register_tokens)
         self.register_button.place(relx=0.95, rely=0.95, anchor=ctk.SE)
 
         # エントリーの監視を開始
