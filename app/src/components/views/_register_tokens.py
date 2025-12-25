@@ -48,7 +48,7 @@ class RegisterEntry(ctk.CTkFrame):
 class RegisterButton(ctk.CTkButton):
     master: RegisterTokensView
     def __init__(self, master: RegisterTokensView, width: int, height: int, text: str, command: Callable[[], None] | None = None) -> None:
-        super(RegisterButton, self).__init__(master=master, width=width, height=height, font=ctk.CTkFont(size=int(height / 3)), text=text, command=command)
+        super(RegisterButton, self).__init__(master=master, width=width, height=height, font=ctk.CTkFont(size=int(height / 3)), text=text, command=command, hover=False)
 
 # トークン登録ビューのコンポーネント
 class RegisterTokensView(ctk.CTkFrame):
