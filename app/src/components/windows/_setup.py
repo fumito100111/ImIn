@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 import customtkinter as ctk
+from ..views import RegisterTokensView
 if TYPE_CHECKING:
     from ...app import App
 
@@ -24,8 +25,11 @@ class SetupWindow(ctk.CTkToplevel):
         self.update_idletasks()
         self.resizable(False, False)
 
+        # トークン登録ビューの作成
+        RegisterTokensView(master=self).pack(fill=ctk.BOTH, expand=True)
+
         # イベントの設定
-        self.protocol('WM_DELETE_WINDOW', self.destroy)
+        self.protocol('WM_DELETE_WINDOW', self.destroy_all)
 
         # セットアップウィンドウの表示
         self.deiconify()
@@ -36,7 +40,13 @@ class SetupWindow(ctk.CTkToplevel):
             self.focus_force()
         self.after(100, _focus)
 
-    def destroy(self) -> None:
+    # セットアップウィンドウの終了
+    def destory(self) -> None:
+        # セットアップウィンドウの終了
+        super(SetupWindow, self).destroy()
+
+    # 全てのウィンドウを終了 (アプリケーションの終了)
+    def destroy_all(self) -> None:
         # セットアップウィンドウの終了
         super(SetupWindow, self).destroy()
 
