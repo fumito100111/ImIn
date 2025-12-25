@@ -121,7 +121,7 @@ class RegisterTokensView(ctk.CTkFrame):
         if is_valid_slack_tokens(bot_token=bot_token, canvas_id=canvas_id):
             # トークンの保存
             from ..windows import SetupWindow
-            service: str = f'{self.master.master.pyproject['project']['name']}-Service' if isinstance(self.master, SetupWindow) else f'{self.master.pyproject['project']['name']}-Service'
+            service: str = f'{self.master.master.pyproject['project']['name']}-Service'
             save_slack_tokens(service=service, tokens={
                 SlackTokens.SLACK_BOT_TOKEN: bot_token,
                 SlackTokens.SLACK_CANVAS_ID: canvas_id
@@ -139,6 +139,29 @@ class RegisterTokensView(ctk.CTkFrame):
                     self.master.master.lift()
                     self.master.master.focus_force()
                 self.master.master.after(100, _focus)
+
+            else:
+                # 成功メッセージの表示
+                self.canvas_id_entry.description.configure(text='トークンが正常に登録されました.', text_color='green')
+
+                # 一定時間後に成功メッセージをクリア (2秒後)
+                def _clear_success_message() -> None:
+                    self.canvas_id_entry.description.configure(text='', text_color=self.bot_token_entry.description.cget('text_color'))
+                self.after(2000, _clear_success_message)
+
+                # エントリーに登録したトークンを表示
+                service: str = f'{self.master.master.pyproject['project']['name']}-Service'
+                tokens: dict[SlackTokens, str] = get_slack_tokens(service=service)
+                self.bot_token_entry.entry.delete(0, ctk.END)
+                self.bot_token_entry.entry.insert(0, tokens[SlackTokens.SLACK_BOT_TOKEN])
+                self.canvas_id_entry.entry.delete(0, ctk.END)
+                self.canvas_id_entry.entry.insert(0, tokens[SlackTokens.SLACK_CANVAS_ID])
+
+                # 最初のエントリーにフォーカスを設定
+                self.bot_token_entry.entry.focus_set()
+
+                # エントリーの監視を再開
+                self._observe_entries()
 
         # トークンが無効な場合はエラーメッセージを表示して, 再度トークンの入力を促す
         else:

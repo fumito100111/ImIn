@@ -1,6 +1,8 @@
 from __future__ import annotations
+import os
 import enum
 import keyring
+from urllib.parse import urlparse
 from slack_bolt import App as SlackApp
 from slack_sdk.web import SlackResponse
 from slack_sdk.errors import SlackApiError
@@ -25,6 +27,10 @@ def is_registered_slack_tokens(service: str) -> bool:
 
 # Slackのトークンが有効か確認する
 def is_valid_slack_tokens(bot_token: str, canvas_id: str) -> bool:
+    # Canvas IDがURL形式の場合はID部分を抽出する
+    if '/' in canvas_id:
+        canvas_id = os.path.basename(urlparse(canvas_id).path)
+
     # Slackとの接続を試みる
     try:
         # Slackアプリを初期化する
@@ -47,6 +53,10 @@ def is_valid_slack_tokens(bot_token: str, canvas_id: str) -> bool:
 # Slackのトークンを保存する
 def save_slack_tokens(service: str, tokens: dict[SlackTokens, str]) -> None:
     for key, token in tokens.items():
+        if key == SlackTokens.SLACK_CANVAS_ID:
+            # Canvas IDがURL形式の場合はID部分を抽出する
+            if '/' in token:
+                token = os.path.basename(urlparse(token).path)
         keyring.set_password(service, key.name, token)
 
 # Slackのトークンを取得する
