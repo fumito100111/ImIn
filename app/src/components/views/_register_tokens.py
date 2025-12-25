@@ -3,7 +3,8 @@ from typing import TYPE_CHECKING, Callable
 import webbrowser
 import tkinter as tk
 import customtkinter as ctk
-from ...utils.slack import SlackTokens, is_valid_slack_tokens, save_slack_tokens, SLACK_BOT_TOKEN_SCOPES_DESCRIPTION#, SLACK_SETUP_HELP_URL
+from PIL import Image
+from ...utils.slack import SlackTokens, is_valid_slack_tokens, save_slack_tokens, SLACK_BOT_TOKEN_SCOPES_DESCRIPTION, SLACK_SETUP_DOCUMENT_URL
 if TYPE_CHECKING:
     from ...app import App
     from ..windows import SetupWindow
@@ -22,21 +23,21 @@ class RegisterEntry(ctk.CTkFrame):
         self.height = height
 
         # ラベルの作成
-        label_width: int = self.width // 3
-        label_height: int = int(self.height // 7.5)
-        label_font: ctk.CTkFont = ctk.CTkFont(size=label_height // 2)
-        self.label = ctk.CTkLabel(master=self, text=text, width=label_width, height=label_height, corner_radius=label_height // 4, font=label_font)
+        label_width: int = int(self.width / 3)
+        label_height: int = int(self.height / 7.5)
+        label_font: ctk.CTkFont = ctk.CTkFont(size=int(label_height / 2))
+        self.label = ctk.CTkLabel(master=self, text=text, width=label_width, height=label_height, corner_radius=int(label_height / 4), font=label_font)
         self.label.place(relx=0.05, rely=0.2, anchor=ctk.NW)
 
         # エントリーの作成
         entry_width: int = int(self.width * 0.7)
-        entry_height: int = int(self.height // 7.5)
-        entry_font: ctk.CTkFont = ctk.CTkFont(size=entry_height // 2)
-        self.entry = ctk.CTkEntry(master=self, width=entry_width, height=entry_height, corner_radius=entry_height // 4, font=entry_font, show=show, justify=ctk.CENTER)
+        entry_height: int = int(self.height / 7.5)
+        entry_font: ctk.CTkFont = ctk.CTkFont(size=int(entry_height / 2))
+        self.entry = ctk.CTkEntry(master=self, width=entry_width, height=entry_height, corner_radius=int(entry_height / 4), font=entry_font, show=show, justify=ctk.CENTER)
         self.entry.place(relx=0.5, rely=0.5, anchor=ctk.N)
 
         # 説明ラベルの作成
-        description_font: ctk.CTkFont = ctk.CTkFont(size=int(self.height // 20))
+        description_font: ctk.CTkFont = ctk.CTkFont(size=int(self.height / 20))
         self.description = ctk.CTkLabel(master=self, text=description, font=description_font)
         self.description.place(relx=0.95, rely=0.75, anchor=ctk.NE)
 
@@ -47,18 +48,36 @@ class RegisterEntry(ctk.CTkFrame):
 class RegisterButton(ctk.CTkButton):
     master: RegisterTokensView
     def __init__(self, master: RegisterTokensView, width: int, height: int, text: str, command: Callable[[], None] | None = None) -> None:
-        super(RegisterButton, self).__init__(master=master, width=width, height=height, font=ctk.CTkFont(size=height // 3), text=text, command=command)
+        super(RegisterButton, self).__init__(master=master, width=width, height=height, font=ctk.CTkFont(size=int(height / 3)), text=text, command=command)
 
-
+# トークン登録ビューのコンポーネント
 class RegisterTokensView(ctk.CTkFrame):
     master: App | SetupWindow
+    root_dir: str
+    help_label: ctk.CTkLabel
     bot_token_entry: RegisterEntry
     canvas_id_entry: RegisterEntry
     register_button: RegisterButton
-    def __init__(self, master: App | SetupWindow) -> None:
+    id: str
+    def __init__(self, master: App | SetupWindow, root_dir: str) -> None:
         super(RegisterTokensView, self).__init__(master=master, width=master.width, height=master.height)
+        self.root_dir = root_dir
 
         # Slackセットアップヘルプリンクの作成
+        image: ctk.CTkImage = ctk.CTkImage(
+            light_image=Image.open(f'{root_dir}/assets/icons/light/help.png'),
+            dark_image=Image.open(f'{root_dir}/assets/icons/dark/help.png'),
+            size=(int(master.height * 0.03), int(master.height * 0.03))
+        )
+        self.help_label = ctk.CTkLabel(
+            master=self,
+            text='',
+            image=image,
+            width=int(master.height * 0.05),
+            height=int(master.height * 0.05)
+        )
+        self.help_label.bind('<Button-1>', lambda event: webbrowser.open_new_tab(SLACK_SETUP_DOCUMENT_URL))
+        self.help_label.place(relx=0.99, rely=0.01, anchor=ctk.NE)
 
         # Slackのボットトークンのエントリーを作成
         self.bot_token_entry = RegisterEntry(master=self, width=master.width, height=int(master.height * 0.4), text='Slack Bot トークン', description=SLACK_BOT_TOKEN_SCOPES_DESCRIPTION, show="*")
@@ -72,21 +91,16 @@ class RegisterTokensView(ctk.CTkFrame):
         self.register_button = RegisterButton(master=self, width=int(master.width * 0.2), height=int(master.height * 0.1), text='登録', command=self.register_tokens)
         self.register_button.place(relx=0.95, rely=0.95, anchor=ctk.SE)
 
-        # それぞれのエントリーが空白でない場合に登録ボタンを有効化 (ループで監視)
-        def _observe_entries() -> None:
-            bot_token: str = self.bot_token_entry.entry.get().strip()
-            canvas_id: str = self.canvas_id_entry.entry.get().strip()
-            if bot_token and canvas_id:
-                self.register_button.configure(state=ctk.NORMAL)
-            else:
-                self.register_button.configure(state=ctk.DISABLED)
-            self.after(100, _observe_entries)
-        _observe_entries()
+        # エントリーの監視を開始
+        self._observe_entries()
 
         # 最初のエントリーにフォーカスを設定
         self.bot_token_entry.entry.focus_set()
 
     def register_tokens(self, event: tk.Event | None = None) -> None:
+        # エントリー監視を停止
+        self.after_cancel(self.id)
+
         # 登録ボタンを無効化
         self.register_button.configure(state=ctk.DISABLED)
 
@@ -133,3 +147,16 @@ class RegisterTokensView(ctk.CTkFrame):
 
             # 最初のエントリーにフォーカスを設定
             self.bot_token_entry.entry.focus_set()
+
+            # エントリーの監視を再開
+            self._observe_entries()
+
+    # それぞれのエントリーが空白でない場合に登録ボタンを有効化 (ループで監視)
+    def _observe_entries(self) -> None:
+        bot_token: str = self.bot_token_entry.entry.get().strip()
+        canvas_id: str = self.canvas_id_entry.entry.get().strip()
+        if bot_token and canvas_id:
+            self.register_button.configure(state=ctk.NORMAL)
+        else:
+            self.register_button.configure(state=ctk.DISABLED)
+        self.id = self.after(100, self._observe_entries)
