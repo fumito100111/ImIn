@@ -30,7 +30,7 @@ class App(ctk.CTk):
         # アプリケーションの設定
         self.title(self.pyproject['project']['name'])
         self.geometry(
-            f'{self.width}x{self.height}+{(self.winfo_screenwidth() - self.width) // 2}+{(self.winfo_screenheight() - self.height) // 2}'
+            f'{self.width}x{self.height}+{int((self.winfo_screenwidth() - self.width) / 2)}+{int((self.winfo_screenheight() - self.height) / 2)}'
         )
         self.update_idletasks()
         self.resizable(False, False)

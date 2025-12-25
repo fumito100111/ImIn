@@ -23,21 +23,21 @@ class RegisterEntry(ctk.CTkFrame):
         self.height = height
 
         # ラベルの作成
-        label_width: int = self.width // 3
-        label_height: int = int(self.height // 7.5)
-        label_font: ctk.CTkFont = ctk.CTkFont(size=label_height // 2)
-        self.label = ctk.CTkLabel(master=self, text=text, width=label_width, height=label_height, corner_radius=label_height // 4, font=label_font)
+        label_width: int = int(self.width / 3)
+        label_height: int = int(self.height / 7.5)
+        label_font: ctk.CTkFont = ctk.CTkFont(size=int(label_height / 2))
+        self.label = ctk.CTkLabel(master=self, text=text, width=label_width, height=label_height, corner_radius=int(label_height / 4), font=label_font)
         self.label.place(relx=0.05, rely=0.2, anchor=ctk.NW)
 
         # エントリーの作成
         entry_width: int = int(self.width * 0.7)
-        entry_height: int = int(self.height // 7.5)
-        entry_font: ctk.CTkFont = ctk.CTkFont(size=entry_height // 2)
-        self.entry = ctk.CTkEntry(master=self, width=entry_width, height=entry_height, corner_radius=entry_height // 4, font=entry_font, show=show, justify=ctk.CENTER)
+        entry_height: int = int(self.height / 7.5)
+        entry_font: ctk.CTkFont = ctk.CTkFont(size=int(entry_height / 2))
+        self.entry = ctk.CTkEntry(master=self, width=entry_width, height=entry_height, corner_radius=int(entry_height / 4), font=entry_font, show=show, justify=ctk.CENTER)
         self.entry.place(relx=0.5, rely=0.5, anchor=ctk.N)
 
         # 説明ラベルの作成
-        description_font: ctk.CTkFont = ctk.CTkFont(size=int(self.height // 20))
+        description_font: ctk.CTkFont = ctk.CTkFont(size=int(self.height / 20))
         self.description = ctk.CTkLabel(master=self, text=description, font=description_font)
         self.description.place(relx=0.95, rely=0.75, anchor=ctk.NE)
 
@@ -48,7 +48,7 @@ class RegisterEntry(ctk.CTkFrame):
 class RegisterButton(ctk.CTkButton):
     master: RegisterTokensView
     def __init__(self, master: RegisterTokensView, width: int, height: int, text: str, command: Callable[[], None] | None = None) -> None:
-        super(RegisterButton, self).__init__(master=master, width=width, height=height, font=ctk.CTkFont(size=height // 3), text=text, command=command)
+        super(RegisterButton, self).__init__(master=master, width=width, height=height, font=ctk.CTkFont(size=int(height / 3)), text=text, command=command)
 
 
 class RegisterTokensView(ctk.CTkFrame):
