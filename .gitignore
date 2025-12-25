@@ -1,0 +1,13 @@
+# macOS
+.DS_Store
+
+# VSCode
+.vscode/*
+!.vscode/launch.json
+
+# Environments
+.env
+.venv/
+
+# Python
+__pycache__/
