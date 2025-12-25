@@ -5,10 +5,13 @@ from slack_bolt import App as SlackApp
 from slack_sdk.web import SlackResponse
 from slack_sdk.errors import SlackApiError
 
+# Slackのボットトークンのスコープ説明文
+SLACK_BOT_TOKEN_SCOPES_DESCRIPTION: str = '※ \'files:read\', \'canvases:write\'の権限が必要です.'
+
 # Slackのトークンの種類を定義する列挙型
 class SlackTokens(enum.IntEnum):
-    BOT_TOKEN: int = enum.auto()
-    CANVAS_ID: int = enum.auto()
+    SLACK_BOT_TOKEN: int = enum.auto()
+    SLACK_CANVAS_ID: int = enum.auto()
 
 # Slackのトークンが登録されているか確認する
 def is_registered_slack_tokens(service: str) -> bool:
@@ -18,15 +21,7 @@ def is_registered_slack_tokens(service: str) -> bool:
     return True
 
 # Slackのトークンが有効か確認する
-def is_valid_slack_tokens(service: str) -> bool:
-    # Slackのトークンが登録されていない場合は無効とする
-    if not is_registered_slack_tokens(service):
-        return False
-
-    # Slackのトークンを取得する
-    bot_token: str = keyring.get_password(service, SlackTokens.BOT_TOKEN.name)
-    canvas_id: str = keyring.get_password(service, SlackTokens.CANVAS_ID.name)
-
+def is_valid_slack_tokens(bot_token: str, canvas_id: str) -> bool:
     # Slackとの接続を試みる
     try:
         # Slackアプリを初期化する
@@ -45,3 +40,21 @@ def is_valid_slack_tokens(service: str) -> bool:
     # その他の例外が発生した場合は無効とする
     except Exception as e:
         return False
+
+# Slackのトークンを保存する
+def save_slack_tokens(service: str, tokens: dict[SlackTokens, str]) -> None:
+    for key, token in tokens.items():
+        keyring.set_password(service, key.name, token)
+
+# Slackのトークンを取得する
+def get_slack_tokens(service: str) -> dict[SlackTokens, str]:
+    tokens: dict[SlackTokens, str] = dict[SlackTokens, str]()
+    for key in sorted(SlackTokens):
+        token: str | None = keyring.get_password(service, key.name)
+        tokens[key] = token if token is not None else ''
+    return tokens
+
+# Slackのトークンを削除する
+def delete_slack_tokens(service: str, tokens: dict[SlackTokens, str]) -> None:
+    for key in tokens.keys():
+        keyring.delete_password(service, key.name)
