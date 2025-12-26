@@ -248,6 +248,7 @@ class MainView(ctk.CTkFrame):
                     rely=0.0,
                     anchor=ctk.NW
                 )
+
             # メインビューの更新
             self.update_idletasks()
 
