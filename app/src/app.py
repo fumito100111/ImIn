@@ -3,6 +3,7 @@ from typing import Any
 import tomllib
 import customtkinter as ctk
 from .components.windows import SetupWindow
+from .components.views import MainView
 from .utils.slack import is_registered_slack_tokens
 
 WIDTH_RATIO: int = 4                # アプリケーションウィンドウの幅の比率
@@ -34,6 +35,9 @@ class App(ctk.CTk):
         )
         self.update_idletasks()
         self.resizable(False, False)
+
+        # メインビューの作成
+        MainView(self).pack(fill='both', expand=True)
 
         # イベントの設定
         self.protocol('WM_DELETE_WINDOW', self.destroy)
