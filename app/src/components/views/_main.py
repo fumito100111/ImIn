@@ -248,6 +248,8 @@ class MainView(ctk.CTkFrame):
                     rely=0.0,
                     anchor=ctk.NW
                 )
+            # メインビューの更新
+            self.update_idletasks()
 
             # 現在の状態を更新
             self.state = state

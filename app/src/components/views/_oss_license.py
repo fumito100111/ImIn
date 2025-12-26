@@ -88,8 +88,7 @@ class OSSLicenseDetail(ctk.CTkFrame):
             font=ctk.CTkFont(size=font_size),
             fg_color='transparent',
             bg_color='transparent',
-            command=self.back_to_list,
-            hover=False
+            command=self.back_to_list
         )
         self.back_button.place(relx=0.01, rely=0.01, anchor=ctk.NW)
 
@@ -197,13 +196,21 @@ class OSSLicenseView(ctk.CTkFrame):
 
     # ライセンスリストビューに切り替え
     def switch_to_license_list(self) -> None:
+        # OSSライセンスリストビューを作成して表示
         self.view = OSSLicenseList(master=self, root_dir=self.root_dir, width=int(self.width * 0.8), height=int(self.height * 0.8))
         self.view.place(relx=0.5, rely=0.5, anchor=ctk.CENTER)
 
+        # OSSライセンスビューの更新
+        self.update_idletasks()
+
     # ライセンス詳細ビューに切り替え
     def switch_to_license_detail(self, oss_name: str) -> None:
+        # OSSライセンス詳細ビューを作成して表示
         self.view = OSSLicenseDetail(master=self, root_dir=self.root_dir, oss_name=oss_name)
         self.view.place(relx=0.5, rely=0.5, anchor=ctk.CENTER)
+
+        # OSSライセンスビューの更新
+        self.update_idletasks()
 
     # ライセンス情報の読み込み
     def _load_licenses(self, root_dir: str) -> None:
