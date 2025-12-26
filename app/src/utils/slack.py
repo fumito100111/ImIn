@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Literal
 import os
 import enum
 import keyring
@@ -71,3 +72,44 @@ def get_slack_tokens(service: str) -> dict[SlackTokens, str]:
 def delete_slack_tokens(service: str, tokens: dict[SlackTokens, str]) -> None:
     for key in tokens.keys():
         keyring.delete_password(service, key.name)
+
+# Slackのキャンバスを置き換える
+def replace_slack_canvas(service: str, content: str) -> bool:
+    # Slackトークンが登録されていない場合はFalseを返す
+    if not is_registered_slack_tokens(service):
+        return False
+
+    # Slackトークンが無効な場合はFalseを返す
+    if not is_valid_slack_tokens(
+        get_slack_tokens(service)[SlackTokens.SLACK_BOT_TOKEN],
+        get_slack_tokens(service)[SlackTokens.SLACK_CANVAS_ID]
+    ):
+        return False
+
+    # 連携済みのSlackのキャンパスを置き換える.
+    try:
+        # Slackトークンを取得する
+        tokens: dict[SlackTokens, str] = get_slack_tokens(service)
+
+        # Slackアプリを初期化する
+        slack_app: SlackApp = SlackApp(token=tokens[SlackTokens.SLACK_BOT_TOKEN])
+
+        # Canvasの内容を置き換える
+        response: SlackResponse = slack_app.client.canvases_edit(
+            canvas_id=tokens[SlackTokens.SLACK_CANVAS_ID],
+            changes=[{
+                'operation': 'replace',
+                'document_content': {
+                    'type': 'markdown',
+                    'markdown': content
+                }
+            }]
+        )
+
+    except SlackApiError as e:
+        return False
+
+    except Exception as e:
+        return False
+
+    return True
