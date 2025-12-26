@@ -6,8 +6,8 @@ import customtkinter as ctk
 from PIL import Image
 from ...utils.slack import SlackTokens, is_registered_slack_tokens, get_slack_tokens, is_valid_slack_tokens, save_slack_tokens, SLACK_BOT_TOKEN_SCOPES_DESCRIPTION, SLACK_SETUP_DOCUMENT_URL
 if TYPE_CHECKING:
-    from ...app import App
     from ..windows import SetupWindow
+    from ..views import MainView
 
 # 登録用エントリーのコンポーネント
 class RegisterEntry(ctk.CTkFrame):
@@ -52,7 +52,7 @@ class RegisterButton(ctk.CTkButton):
 
 # トークン登録ビューのコンポーネント
 class RegisterTokensView(ctk.CTkFrame):
-    master: App | SetupWindow
+    master: SetupWindow | MainView
     root_dir: str
     width: int
     height: int
@@ -61,9 +61,11 @@ class RegisterTokensView(ctk.CTkFrame):
     canvas_id_entry: RegisterEntry
     register_button: RegisterButton
     id: str
-    def __init__(self, master: App | SetupWindow, root_dir: str, width: int, height: int) -> None:
+    def __init__(self, master: SetupWindow | MainView, root_dir: str, width: int, height: int) -> None:
         super(RegisterTokensView, self).__init__(master=master, width=width, height=height)
         self.root_dir = root_dir
+        self.width = width
+        self.height = height
 
         # Slackセットアップヘルプリンクの作成
         image: ctk.CTkImage = ctk.CTkImage(
