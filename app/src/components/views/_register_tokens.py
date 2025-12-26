@@ -23,16 +23,16 @@ class RegisterEntry(ctk.CTkFrame):
         self.height = height
 
         # ラベルの作成
-        label_width: int = int(self.width / 3)
+        label_width: int = int(self.width * 0.4)
         label_height: int = int(self.height / 7.5)
-        label_font: ctk.CTkFont = ctk.CTkFont(size=int(label_height / 2))
-        self.label = ctk.CTkLabel(master=self, text=text, width=label_width, height=label_height, corner_radius=int(label_height / 4), font=label_font)
+        label_font: ctk.CTkFont = ctk.CTkFont(size=int(min(label_width, label_height) / 1.25))
+        self.label = ctk.CTkLabel(master=self, text=text, width=label_width, height=label_height, corner_radius=int(label_height / 4), font=label_font, anchor=ctk.W)
         self.label.place(relx=0.05, rely=0.2, anchor=ctk.NW)
 
         # エントリーの作成
         entry_width: int = int(self.width * 0.7)
-        entry_height: int = int(self.height / 7.5)
-        entry_font: ctk.CTkFont = ctk.CTkFont(size=int(entry_height / 2))
+        entry_height: int = int(self.height / 6)
+        entry_font: ctk.CTkFont = ctk.CTkFont(size=int(min(entry_width, entry_height) / 2))
         self.entry = ctk.CTkEntry(master=self, width=entry_width, height=entry_height, corner_radius=int(entry_height / 4), font=entry_font, show=show, justify=ctk.CENTER)
         self.entry.place(relx=0.5, rely=0.5, anchor=ctk.N)
 
@@ -83,12 +83,16 @@ class RegisterTokensView(ctk.CTkFrame):
         self.help_label.bind('<Button-1>', lambda event: webbrowser.open_new_tab(SLACK_SETUP_DOCUMENT_URL))
         self.help_label.place(relx=0.99, rely=0.01, anchor=ctk.NE)
 
+        # エントリーの設定
+        register_entry_width: int = width
+        register_entry_height: int = int(height * 0.4)
+
         # Slackのボットトークンのエントリーを作成
-        self.bot_token_entry = RegisterEntry(master=self, width=width, height=int(height * 0.4), text='Slack Bot トークン', description=SLACK_BOT_TOKEN_SCOPES_DESCRIPTION, show="*")
+        self.bot_token_entry = RegisterEntry(master=self, width=register_entry_width, height=register_entry_height, text='Slack Bot トークン', description=SLACK_BOT_TOKEN_SCOPES_DESCRIPTION, show="*")
         self.bot_token_entry.place(relx=0.5, rely=0.05, anchor=ctk.N)
 
         # CanvasのIDエントリーを作成
-        self.canvas_id_entry = RegisterEntry(master=self, width=width, height=int(height * 0.4), text='Canvas ID')
+        self.canvas_id_entry = RegisterEntry(master=self, width=register_entry_width, height=register_entry_height, text='Canvas ID')
         self.canvas_id_entry.place(relx=0.5, rely=0.45, anchor=ctk.N)
 
         # 登録ボタンを作成
