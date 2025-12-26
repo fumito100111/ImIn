@@ -1,5 +1,5 @@
 from ._utils import (
-    UserState
+    UserState, UserAction
 )
 from . import db
 from . import nfc
