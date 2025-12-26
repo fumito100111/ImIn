@@ -4,7 +4,7 @@ import sqlite3
 import datetime
 
 # データベースの名前
-DB_NAME: str = 'test.db'
+DB_NAME: str = 'ImIn.db'
 
 # データベースに接続する
 def connection_db(root_dir: str) -> sqlite3.Connection:
