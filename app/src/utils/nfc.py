@@ -4,6 +4,7 @@ import time
 import hashlib
 import dataclasses
 import threading
+from smartcard.System import readers
 from smartcard.CardType import CardType, AnyCardType
 from smartcard.CardRequest import CardRequest
 from smartcard.PassThruCardService import PassThruCardService
@@ -189,3 +190,11 @@ class NFC(object):
                 if self.only_once:
                     self.is_running = False
                     break
+
+    # NFCリーダーが接続されているかどうかを確認するメソッド
+    def is_connected(self) -> bool:
+        # 利用可能なリーダーの一覧を取得
+        available_readers: list[str] = readers()
+
+        # リーダーが一つ以上存在すれば接続されていると判断
+        return len(available_readers) > 0
