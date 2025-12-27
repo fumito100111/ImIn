@@ -212,13 +212,112 @@ class RegisterUserDetailView(ctk.CTkFrame):
         self.id_entries_observer = self.after(100, self._observe_entries)
 
 
+
+# ユーザー情報フレーム (編集, 削除ボタンなどを含む)
+class UserInfoFrame(ctk.CTkFrame):
+    master: UsersList
+
+
+# ユーザー一覧スクロールフレーム
+class UsersList(ctk.CTkScrollableFrame):
+    master: ctk.CTkCanvas           # CT_kScrollableFrameのmasterはCTkCanvas型になるため
+    _master: UsersTabView           # 親ビューの参照
+    root_dir: str
+    width: int
+    height: int
+    user_state: UserState | None    # ユーザー状態フィルター (Noneの場合は全ユーザー表示)
+    def __init__(self, master: UsersTabView, root_dir: str, width: int, height: int, user_state: UserState | None = None) -> None:
+        super(UsersList, self).__init__(
+            master=master,
+            width=width,
+            height=height,
+            label_font=ctk.CTkFont(size=int(min(width, height) * 0.1)),
+            corner_radius=int(min(width, height) * 0.02),
+            bg_color='transparent'
+        )
+        self._master = master
+        self.root_dir = root_dir
+        self.width = width
+        self.height = height
+        self.user_state = user_state
+
+        ctk.CTkLabel(
+            master=self,
+            text=f'ユーザー一覧 (フィルター: {user_state.name})'
+        ).pack()
+
+# ユーザータブボタンのコンポーネント
+class TabButton(ctk.CTkButton):
+    master: UsersTabView
+    root_dir: str
+    width: int
+    height: int
+    user_state: UserState
+    def __init__(self, master: UsersTabView, root_dir: str, width: int, height: int, text: str = '', user_state: UserState = UserState.IN) -> None:
+        super(TabButton, self).__init__(
+            master=master,
+            width=width,
+            height=height,
+            text=text,
+            fg_color='transparent',
+            bg_color='transparent',
+            hover=True
+        )
+        self.root_dir = root_dir
+        self.width = width
+        self.height = height
+        self.user_state = user_state
+
+# ユーザータブビューのコンポーネント (在室者・不在者タブ)
+class UsersTabView(ctk.CTkFrame):
+    master: RegisterUserView
+    root_dir: str
+    width: int
+    height: int
+    tabs: dict[UserState, UsersList] = dict[UserState, UsersList]()
+    tab_buttons: dict[UserState, TabButton] = dict[UserState, TabButton]()
+    tab_labels: dict[UserState, str] = {
+        UserState.IN: '在室者',
+        UserState.OUT: '不在者'
+    }
+    def __init__(self, master: RegisterUserView, root_dir: str, width: int, height: int) -> None:
+        super(UsersTabView, self).__init__(
+            master=master,
+            width=width,
+            height=height,
+            fg_color='transparent',
+            bg_color='transparent'
+        )
+        self.root_dir = root_dir
+        self.width = width
+        self.height = height
+
+        # タブボタンの作成
+        padding: int = int(width * 0.02) # タブボタン間の余白
+        button_width: int = int((width - padding * (len(self.tab_labels) + 1)) / len(self.tab_labels))
+        button_height: int = int(height * 0.1)
+        for index, user_state in enumerate(sorted(self.tab_labels.keys(), key=lambda _user_state: _user_state.value), start=0):
+            tab_button: TabButton = TabButton(
+                master=self,
+                root_dir=root_dir,
+                width=button_width,
+                height=button_height,
+                text=self.tab_labels[user_state],
+                user_state=user_state
+            )
+            tab_button.place(relx=(index * button_width + (index + 1) * padding) / width, rely=0.05, anchor=ctk.NW)
+            self.tab_buttons[user_state] = tab_button
+
+
+
 # ユーザー登録ビューのコンポーネント
 class RegisterUserView(ctk.CTkFrame):
     master: MainView
     root_dir: str
     width: int
     height: int
-    add_new_user_button: AddNewUserButton
+    add_new_user_button: AddNewUserButton   # 新規ユーザー追加ボタン
+    users_tab_view: UsersTabView            # ユーザータブビュー
     def __init__(self, master: MainView, root_dir: str, width: int, height: int) -> None:
         super(RegisterUserView, self).__init__(master=master, width=width, height=height)
         self.root_dir = root_dir
@@ -236,8 +335,14 @@ class RegisterUserView(ctk.CTkFrame):
         )
         self.add_new_user_button.place(relx=0.95, rely=0.05, anchor=ctk.NE)
 
-        # フレームのサイズ変更を防止
-        self.pack_propagate(False)
+        # ユーザータブビューの作成
+        self.users_tab_view = UsersTabView(
+            master=self,
+            root_dir=root_dir,
+            width=int(width * 0.8),
+            height=int(height * 0.8)
+        )
+        self.users_tab_view.place(relx=0.5, rely=0.55, anchor=ctk.CENTER)
 
     # 新規ユーザー登録詳細ウィンドウへ切り替え
     def switch_to_register_user_detail_window(self) -> None:
