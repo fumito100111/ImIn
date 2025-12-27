@@ -12,3 +12,8 @@ class UserAction(enum.IntEnum):
     EXIT: int = enum.auto()   # 退室
 
 DEFAULT_USER_STATE: UserState = UserState.IN    # ユーザーの在室状態のデフォルト (ユーザー登録時に使用)
+
+USER_STATE_LABELS: dict[UserState, str] = {     # ユーザーの在室状態のラベル辞書
+    UserState.IN: '在室',
+    UserState.OUT: '不在'
+}
