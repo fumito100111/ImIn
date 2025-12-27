@@ -20,8 +20,8 @@ class UID(str):
 COMMAND_GET_UID = [0xFF, 0xCA, 0x00, 0x00, 0x00] # NFCタグのUIDを取得するコマンド
 
 # 各種タイムアウト設定
-DEFAULT_TIMEOUT_NFC_WAIT: int = 2 # NFC読み取りのデフォルトの待機タイムアウト時間 (秒)
-DEFAULT_TIMEOUT_SAME_UID: int = 5 # 同じUIDを無視するデフォルトのタイムアウト時間 (秒)
+DEFAULT_TIMEOUT_NFC_WAIT: float = 10e-2 # NFC読み取りのデフォルトの待機タイムアウト時間 (秒)
+DEFAULT_TIMEOUT_SAME_UID: float = 5.0   # 同じUIDを無視するデフォルトのタイムアウト時間 (秒)
 
 # NFCのレスポンスを表すデータクラス
 @dataclasses.dataclass
