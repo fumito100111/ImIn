@@ -241,10 +241,26 @@ class UsersList(ctk.CTkScrollableFrame):
         self.height = height
         self.user_state = user_state
 
-        ctk.CTkLabel(
+        self.label = ctk.CTkLabel(
             master=self,
             text=f'ユーザー一覧 (フィルター: {user_state.name})'
-        ).pack()
+        )
+        self.label.pack(pady=10)
+
+    def update_users_list(self, user_state: UserState) -> None:
+        # ユーザー状態フィルターが変更された場合にリストを更新
+        if self.user_state != user_state:
+            # フィルター状態を更新
+            self.user_state = user_state
+
+            # 古いユーザー一覧をクリア
+            # for widget in self.winfo_children():
+            #     widget.destroy()
+
+            # ここにユーザー一覧を再取得して表示するコードを追加
+            self.label.configure(text=f'ユーザー一覧 (フィルター: {user_state.name})')
+            self.update_idletasks()
+
 
 # ユーザータブボタンのコンポーネント
 class TabButton(ctk.CTkButton):
@@ -259,7 +275,8 @@ class TabButton(ctk.CTkButton):
             width=width,
             height=height,
             text=text,
-            fg_color='transparent',
+            command=self._command,
+            fg_color=ctk.ThemeManager.theme['CTkButton']['fg_color'] if user_state == DEFAULT_USER_STATE else 'transparent',
             bg_color='transparent',
             hover=True
         )
@@ -268,14 +285,19 @@ class TabButton(ctk.CTkButton):
         self.height = height
         self.user_state = user_state
 
+    # タブがクリックされたときの動作
+    def _command(self) -> None:
+        # ユーザー一覧を更新
+        self.master.update_users_list(self.user_state)
+
 # ユーザータブビューのコンポーネント (在室者・不在者タブ)
 class UsersTabView(ctk.CTkFrame):
     master: RegisterUserView
     root_dir: str
     width: int
     height: int
-    tabs: dict[UserState, UsersList] = dict[UserState, UsersList]()
-    tab_buttons: dict[UserState, TabButton] = dict[UserState, TabButton]()
+    tabs: dict[UserState, TabButton] = dict[UserState, TabButton]() # タブボタンの辞書
+    users_list: UsersList                                           # ユーザー一覧 (現在のタブに対応)
     tab_labels: dict[UserState, str] = {
         UserState.IN: '在室者',
         UserState.OUT: '不在者'
@@ -292,12 +314,22 @@ class UsersTabView(ctk.CTkFrame):
         self.width = width
         self.height = height
 
+        # ユーザー一覧の作成 (初期状態は在室者タブ)
+        self.users_list = UsersList(
+            master=self,
+            root_dir=root_dir,
+            width=int(width * 0.9),
+            height=int(height * 0.8),
+            user_state=UserState.IN
+        )
+        self.users_list.place(relx=0.5, rely=0.55, anchor=ctk.CENTER)
+
         # タブボタンの作成
-        padding: int = int(width * 0.02) # タブボタン間の余白
+        padding: int = int(width * 0.075) # タブボタン間の余白
         button_width: int = int((width - padding * (len(self.tab_labels) + 1)) / len(self.tab_labels))
         button_height: int = int(height * 0.1)
         for index, user_state in enumerate(sorted(self.tab_labels.keys(), key=lambda _user_state: _user_state.value), start=0):
-            tab_button: TabButton = TabButton(
+            self.tabs[user_state] = TabButton(
                 master=self,
                 root_dir=root_dir,
                 width=button_width,
@@ -305,10 +337,20 @@ class UsersTabView(ctk.CTkFrame):
                 text=self.tab_labels[user_state],
                 user_state=user_state
             )
-            tab_button.place(relx=(index * button_width + (index + 1) * padding) / width, rely=0.05, anchor=ctk.NW)
-            self.tab_buttons[user_state] = tab_button
+            self.tabs[user_state].place(relx=(index * button_width + (index + 1) * padding) / width, rely=0.05, anchor=ctk.NW)
 
-
+    # ユーザー一覧を更新
+    def update_users_list(self, user_state: UserState) -> None:
+        # タブの状態を更新
+        for _user_state, tab in self.tabs.items():
+            if _user_state == user_state:
+                tab.configure(fg_color=ctk.ThemeManager.theme['CTkButton']['fg_color'])
+                tab.configure(state=ctk.DISABLED)
+            else:
+                tab.configure(fg_color='transparent')
+                tab.configure(state=ctk.NORMAL)
+        # ユーザー一覧を更新
+        self.users_list.update_users_list(user_state)
 
 # ユーザー登録ビューのコンポーネント
 class RegisterUserView(ctk.CTkFrame):
