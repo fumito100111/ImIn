@@ -7,17 +7,17 @@ from PIL import Image
 from ...utils.slack import SlackTokens, is_registered_slack_tokens, get_slack_tokens, is_valid_slack_tokens, save_slack_tokens, SLACK_BOT_TOKEN_SCOPES_DESCRIPTION, SLACK_SETUP_DOCUMENT_URL
 if TYPE_CHECKING:
     from ..windows import SetupWindow
-    from ..views import MainView
+    from ..views import MainView, RegisterUserDetailView
 
 # 登録用エントリーのコンポーネント
 class RegisterEntry(ctk.CTkFrame):
-    master: RegisterTokensView
+    master: RegisterTokensView | RegisterUserDetailView
     width: int
     height: int
     label: ctk.CTkLabel
     entry: ctk.CTkEntry
     description: ctk.CTkLabel
-    def __init__(self, master: RegisterTokensView, width: int, height: int, text: str, description: str = '', show: str | None = None) -> None:
+    def __init__(self, master: RegisterTokensView | RegisterUserDetailView, width: int, height: int, text: str, description: str = '', show: str | None = None) -> None:
         super(RegisterEntry, self).__init__(master=master, width=width, height=height, fg_color='transparent')
         self.width = width
         self.height = height
@@ -201,7 +201,7 @@ class RegisterTokensView(ctk.CTkFrame):
         bot_token: str = self.bot_token_entry.entry.get().strip()
         canvas_id: str = self.canvas_id_entry.entry.get().strip()
 
-        if bot_token and canvas_id and bot_token:
+        if bot_token != '' and canvas_id != '':
             # 既にトークンが登録されている場合は変更がある場合のみ有効化
             service: str = f'{self.master.master.pyproject['project']['name']}-Service'
             if is_registered_slack_tokens(service=service):
