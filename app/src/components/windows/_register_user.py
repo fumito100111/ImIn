@@ -1,6 +1,8 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 import customtkinter as ctk
+from ...utils.nfc import NFC
+from ..windows import NFCWaitWindow
 from ..views import MainView, RegisterUserDetailView
 
 # ユーザー登録詳細ウィンドウ
@@ -9,7 +11,9 @@ class RegisterUserDetailWindow(ctk.CTkToplevel):
     root_dir: str
     width: int
     height: int
-    id_focus_force: str
+    nfc: NFC
+    nfc_wait_window: NFCWaitWindow | None = None
+    id_nfc_observer: str | None = None
     def __init__(self, master: MainView, root_dir: str, width: int, height: int, title: str = 'Add New User') -> None:
         super(RegisterUserDetailWindow, self).__init__(master=master, width=width, height=height)
         self.root_dir = root_dir
@@ -27,6 +31,9 @@ class RegisterUserDetailWindow(ctk.CTkToplevel):
         self.update_idletasks()
         self.resizable(False, False)
 
+        # NFCインスタンスの作成
+        self.nfc = NFC()
+
         # ユーザー登録詳細ビューの作成
         RegisterUserDetailView(
             master=self,
@@ -41,12 +48,79 @@ class RegisterUserDetailWindow(ctk.CTkToplevel):
         # メインウィンドウの非表示
         self.master.master.withdraw()
 
-        # ユーザー登録詳細ウィンドウの表示
-        self.deiconify()
+        # NFCに接続できる場合
+        if self.nfc.is_connected():
+            # ユーザー登録詳細ウィンドウの表示
+            self.deiconify()
 
+            # ユーザー登録詳細ウィンドウにフォーカスを設定
+            def _focus() -> None:
+                self.lift()
+                self.focus_force()
+            self.after(100, _focus)
+
+            # NFCの接続状況を監視開始
+            self._start_observe_nfc_connection()
+
+        # NFCに接続できない場合, NFC待機ウィンドウを表示
+        else:
+            self.nfc_wait_window = NFCWaitWindow(
+                master=self,
+                width=self.width,
+                height=self.height,
+                destroy_callback_success=self._destroy_callback_success_for_nfc_wait_window,
+                destroy_callback_failure=self._destroy_callback_failure_for_nfc_wait_window
+            )
+
+    # ユーザー登録詳細ウィンドウの終了
     def destroy(self) -> None:
+        # NFCの接続状況の監視を停止
+        self._stop_observe_nfc_connection()
+
         # ユーザー登録詳細ウィンドウの終了
         super(RegisterUserDetailWindow, self).destroy()
 
         # メインウィンドウの表示
         self.master.master.deiconify()
+
+    # NFCの接続状況を監視を開始
+    def _start_observe_nfc_connection(self) -> None:
+        # NFCの接続状況の監視を停止 (重複防止)
+        self._stop_observe_nfc_connection()
+
+        # NFCが接続されている場合, 監視を継続
+        if self.nfc.is_connected():
+            self.id_nfc_observer = self.after(100, self._start_observe_nfc_connection)
+
+        # NFCが接続されていない場合, NFC待機ウィンドウを表示
+        else:
+            self.nfc_wait_window = NFCWaitWindow(
+                master=self,
+                width=self.width,
+                height=self.height,
+                destroy_callback_success=self._destroy_callback_success_for_nfc_wait_window,
+                destroy_callback_failure=self._destroy_callback_failure_for_nfc_wait_window
+            )
+
+    # NFCの接続状況を監視を停止
+    def _stop_observe_nfc_connection(self) -> None:
+        if self.id_nfc_observer is not None:
+            self.after_cancel(self.id_nfc_observer)
+            self.id_nfc_observer = None
+
+    # 接続に成功した場合のコールバック関数
+    def _destroy_callback_success_for_nfc_wait_window(self) -> None:
+        # NFCの接続状況の監視を停止
+        self._stop_observe_nfc_connection()
+
+        # ユーザー登録詳細ウィンドウの表示
+        self.deiconify()
+        self.update_idletasks()
+
+        # NFCの接続状況の監視を開始
+        self.id_nfc_observer = self.after(100, self._start_observe_nfc_connection)
+
+    # 接続に失敗した場合のコールバック関数
+    def _destroy_callback_failure_for_nfc_wait_window(self) -> None:
+        # ユーザー登録詳細ウィンドウの終了
+        self.destroy()
