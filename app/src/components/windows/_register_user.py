@@ -122,5 +122,11 @@ class RegisterUserDetailWindow(ctk.CTkToplevel):
 
     # 接続に失敗した場合のコールバック関数
     def _destroy_callback_failure_for_nfc_wait_window(self) -> None:
+        # 現在のビューがユーザー登録ビューの場合
+        from ..views import RegisterUserView
+        if isinstance(self.master.bodyview, RegisterUserView):
+            # ユーザー一覧を更新
+            self.master.bodyview.update_users_list()
+
         # ユーザー登録詳細ウィンドウの終了
         self.destroy()
