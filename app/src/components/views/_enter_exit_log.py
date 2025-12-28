@@ -2,15 +2,21 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import datetime
 import customtkinter as ctk
+from ...utils import UserState, UserAction
 from ...utils.nfc import NFC
+from ...utils.db import (
+    is_registered_user,
+    get_user_info,
+    update_user_state
+)
 if TYPE_CHECKING:
-    from ..windows import EntryExitLogWindow
+    from ..windows import EnterExitLogWindow
 
 DEFAULT_MAIN_LABEL_TEXT: str = 'ICカードをかざしてください'
 DEFAULT_NOT_CONNECTED_TEXT: str = 'NFCリーダーが接続されていません'
 
 class ClockLabel(ctk.CTkLabel):
-    def __init__(self, master: EntryExitLogView, width: int, height: int) -> None:
+    def __init__(self, master: EnterExitLogView, width: int, height: int) -> None:
         super(ClockLabel, self).__init__(
             master=master,
             width=width,
@@ -27,16 +33,18 @@ class ClockLabel(ctk.CTkLabel):
         self.configure(text=now)
         self.after(100, self.update_clock)
 
-class EntryExitLogView(ctk.CTkFrame):
-    master: EntryExitLogWindow
+class EnterExitLogView(ctk.CTkFrame):
+    master: EnterExitLogWindow
+    root_dir: str
     width: int
     height: int
     nfc: NFC
     id_nfc_observer: str | None = None
     main_label: ctk.CTkLabel
     clock_label: ClockLabel
-    def __init__(self, master: ctk.CTkToplevel, width: int, height: int) -> None:
-        super(EntryExitLogView, self).__init__(master=master, width=width, height=height)
+    def __init__(self, master: EnterExitLogWindow, root_dir: str, width: int, height: int) -> None:
+        super(EnterExitLogView, self).__init__(master=master, width=width, height=height)
+        self.root_dir = root_dir
         self.width = width
         self.height = height
 
@@ -76,7 +84,7 @@ class EntryExitLogView(ctk.CTkFrame):
         # NFCの読み取りセッションを停止
         self.nfc.stop()
 
-        super(EntryExitLogView, self).destroy()
+        super(EnterExitLogView, self).destroy()
 
     # NFCの接続状況を監視を開始
     def _start_observe_nfc_connection(self) -> None:

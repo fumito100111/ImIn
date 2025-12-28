@@ -1,20 +1,22 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 import customtkinter as ctk
-from ..views import EntryExitLogView
+from ..views import EnterExitLogView
 if TYPE_CHECKING:
     from ...app import App
     from ..views import ViewState
 
 # 入退室記録ウィンドウ
-class EntryExitLogWindow(ctk.CTkToplevel):
+class EnterExitLogWindow(ctk.CTkToplevel):
     master: App
+    root_dir: str
     width: int
     height: int
-    view: EntryExitLogView
+    view: EnterExitLogView
     id_nfc_observer: str | None = None
     def __init__(self, master: App, width: int, height: int) -> None:
-        super(EntryExitLogWindow, self).__init__(master=master)
+        super(EnterExitLogWindow, self).__init__(master=master)
+        self.root_dir = master.root_dir
         self.width = width
         self.height = height
 
@@ -29,8 +31,9 @@ class EntryExitLogWindow(ctk.CTkToplevel):
         self.resizable(False, False)
 
         # 入退室記録ビューの作成
-        self.view = EntryExitLogView(
+        self.view = EnterExitLogView(
             master=self,
+            root_dir=self.root_dir,
             width=self.width,
             height=self.height
         )
@@ -61,4 +64,4 @@ class EntryExitLogWindow(ctk.CTkToplevel):
         self.master.deiconify()
 
         # 入退室記録ウィンドウの破棄
-        super(EntryExitLogWindow, self).destroy()
+        super(EnterExitLogWindow, self).destroy()

@@ -4,7 +4,7 @@ import enum
 import customtkinter as ctk
 from PIL import Image
 from..views import RegisterUserView, RegisterTokensView, AppInfoView, OSSLicenseView
-from ..windows._entry_exit_log import EntryExitLogWindow
+from ..windows._enter_exit_log import EnterExitLogWindow
 if TYPE_CHECKING:
     from ...app import App
 
@@ -194,7 +194,7 @@ class MainView(ctk.CTkFrame):
                 pass
 
             elif state == ViewState.ENTER_EXIT_LOG:
-                EntryExitLogWindow(
+                EnterExitLogWindow(
                     master=self.master,
                     width=self.master.winfo_screenwidth(),
                     height=self.master.winfo_screenheight()

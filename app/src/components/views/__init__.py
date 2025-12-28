@@ -1,5 +1,5 @@
-from ._entry_exit_log import (
-    EntryExitLogView
+from ._enter_exit_log import (
+    EnterExitLogView
 )
 from ._register_tokens import (
     RegisterTokensView,
