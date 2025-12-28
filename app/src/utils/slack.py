@@ -84,20 +84,20 @@ def delete_slack_tokens(tokens: dict[SlackTokens, str]) -> None:
 def replace_slack_canvas(content: str) -> bool:
     service: str = get_service()
     # Slackトークンが登録されていない場合はFalseを返す
-    if not is_registered_slack_tokens(service):
+    if not is_registered_slack_tokens():
         return False
 
     # Slackトークンが無効な場合はFalseを返す
     if not is_valid_slack_tokens(
-        get_slack_tokens(service)[SlackTokens.SLACK_BOT_TOKEN],
-        get_slack_tokens(service)[SlackTokens.SLACK_CANVAS_ID]
+        get_slack_tokens()[SlackTokens.SLACK_BOT_TOKEN],
+        get_slack_tokens()[SlackTokens.SLACK_CANVAS_ID]
     ):
         return False
 
     # 連携済みのSlackのキャンパスを置き換える.
     try:
         # Slackトークンを取得する
-        tokens: dict[SlackTokens, str] = get_slack_tokens(service)
+        tokens: dict[SlackTokens, str] = get_slack_tokens()
 
         # Slackアプリを初期化する
         slack_app: SlackApp = SlackApp(token=tokens[SlackTokens.SLACK_BOT_TOKEN])
@@ -144,4 +144,4 @@ def update_slack_canvas_from_db(root_dir: str) -> bool:
         content += f'- {user['name']}\n'
 
     # Slackのキャンバスを置き換える
-    return replace_slack_canvas(service=service, content=content)
+    return replace_slack_canvas(content=content)
