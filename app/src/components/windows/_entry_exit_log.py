@@ -23,7 +23,7 @@ class EntryExitLogWindow(ctk.CTkToplevel):
         self.withdraw()
 
         # 入退室記録ウィンドウの設定
-        self.title('入退室記録')
+        self.title('')
         self.geometry(f'{self.width}x{self.height}')
         self.attributes('-fullscreen', True)
         self.update_idletasks()
@@ -35,7 +35,6 @@ class EntryExitLogWindow(ctk.CTkToplevel):
             width=self.width,
             height=self.height
         ).pack(fill=ctk.BOTH, expand=True)
-
 
         # イベントの設定
         self.protocol('WM_DELETE_WINDOW', self.destroy)
@@ -51,7 +50,6 @@ class EntryExitLogWindow(ctk.CTkToplevel):
             self.lift()
             self.focus_force()
         self.after(100, _focus)
-
 
     # 入退室記録ウィンドウの破棄
     def destroy(self) -> None:
