@@ -5,7 +5,8 @@ from ._register_tokens import (
 )
 from ._register_user import (
     RegisterUserView,
-    RegisterUserDetailView
+    RegisterUserDetailView,
+    DeleteUserAlertView
 )
 from ._app_info import AppInfoView
 from ._oss_license import OSSLicenseView

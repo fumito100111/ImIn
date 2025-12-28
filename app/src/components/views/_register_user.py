@@ -9,13 +9,14 @@ from ...utils.db import (
     is_registered_user,
     register_user,
     update_user_state,
+    delete_user,
     get_user_info,
     get_users_by_state
 )
 from ..views import RegisterEntry, RegisterButton
 if TYPE_CHECKING:
     from ..views import MainView
-    from ..windows import RegisterUserDetailWindow
+    from ..windows import RegisterUserDetailWindow, DeleteUserAlertWindow
 
 # 新規ユーザー追加ボタン
 class AddNewUserButton(ctk.CTkButton):
@@ -219,20 +220,126 @@ class RegisterUserDetailView(ctk.CTkFrame):
             self.register_button.configure(state=ctk.DISABLED)
         self.id_entries_observer = self.after(100, self._observe_entries)
 
+# ユーザー削除アラートビューのコンポーネント
+class DeleteUserAlertView(ctk.CTkFrame):
+    master: DeleteUserAlertWindow
+    root_dir: str
+    width: int
+    height: int
+    deleted_user_name: str
+    deleted_user_hashed_uid: str
+    alert_message: str
+    alert_label: ctk.CTkLabel
+    confirm_button: ctk.CTkButton
+    cancel_button: ctk.CTkButton
+    def __init__(self, master: DeleteUserAlertWindow, root_dir: str, width: int, height: int, deleted_user_name: str, deleted_user_hashed_uid: str) -> None:
+        super(DeleteUserAlertView, self).__init__(
+            master=master,
+            width=width,
+            height=height,
+            # fg_color='transparent',
+            bg_color='transparent'
+        )
+        self.root_dir = root_dir
+        self.width = width
+        self.height = height
+        self.deleted_user_name = deleted_user_name
+        self.deleted_user_hashed_uid = deleted_user_hashed_uid
 
+        # アラートメッセージラベルの作成
+        label_font_size: int = int(min(width, height) * 0.075)
+        self.alert_message = f'ユーザー「{self.deleted_user_name}」を削除しますか？\n\n※ この操作は元に戻せません.'
+        self.alert_label = ctk.CTkLabel(
+            master=self,
+            text=self.alert_message,
+            font=ctk.CTkFont(size=label_font_size),
+            anchor=ctk.CENTER
+        )
+        self.alert_label.place(relx=0.5, rely=0.4, anchor=ctk.CENTER)
+
+        # ボタンのサイズ
+        button_width: int = int(width * 0.35)
+        button_height: int = int(height * 0.2)
+        button_font_size: int = int(min(button_width, button_height) * 0.5)
+
+        # 確認ボタンの作成
+        self.confirm_button = ctk.CTkButton(
+            master=self,
+            width=button_width,
+            height=button_height,
+            text='確認',
+            font=ctk.CTkFont(size=button_font_size),
+            command=self.confirm_delete_user,
+            fg_color=ctk.ThemeManager.theme['CTkButton']['fg_color'],
+            bg_color='transparent',
+            hover=True
+        )
+        self.confirm_button.place(relx=0.75, rely=0.8, anchor=ctk.CENTER)
+
+        # キャンセルボタンの作成
+        self.cancel_button = ctk.CTkButton(
+            master=self,
+            width=button_width,
+            height=button_height,
+            text='キャンセル',
+            font=ctk.CTkFont(size=button_font_size),
+            command=self.cancel_delete_user,
+            fg_color='transparent',
+            bg_color='transparent',
+            hover=True
+        )
+        self.cancel_button.place(relx=0.25, rely=0.8, anchor=ctk.CENTER)
+
+        # イベントの設定
+        self.master.protocol('WM_DELETE_WINDOW', self.master.destroy)
+
+    # ユーザー削除を確認
+    def confirm_delete_user(self) -> None:
+        # ユーザー削除に成功した場合
+        if delete_user(self.root_dir, self.deleted_user_hashed_uid):
+            # 削除成功メッセージを1秒間表示した後、ウィンドウを閉じる
+            text_color: str = self.alert_label.cget('text_color')
+            self.alert_label.configure(text='ユーザーが正常に削除されました', text_color='green')
+            def _close_window() -> None:
+                self.alert_label.configure(text=self.alert_message, text_color=text_color)
+
+                # ユーザー削除アラートビューを終了
+                self.master.destroy()
+            self.after(1000, _close_window)
+
+        # ユーザー削除に失敗した場合
+        else:
+            # 確認・キャンセルボタンを無効化
+            self.confirm_button.configure(state=ctk.DISABLED)
+            self.cancel_button.configure(state=ctk.DISABLED)
+
+            # 削除失敗メッセージを1秒間表示 (1秒後にアラートビューを閉じて, キャンセルと同じ動作を行う)
+            text_color: str = self.alert_label.cget('text_color')
+            self.alert_label.configure(text='ユーザーの削除に失敗しました', text_color='red')
+            def _clear_error_message() -> None:
+                self.alert_label.configure(text=self.alert_message, text_color=text_color)
+
+                # ユーザー削除アラートビューを終了 (キャンセルと同じ動作)
+                self.cancel_delete_user()
+
+            self.after(1000, _clear_error_message)
+
+    # ユーザー削除をキャンセル
+    def cancel_delete_user(self) -> None:
+        self.master.destroy()
 
 # ユーザー情報フレーム (編集, 削除ボタンなどを含む)
 class UserInfoFrame(ctk.CTkFrame):
     master: UsersList
-    _register_user_view: RegisterUserView  # 親ビューの参照
+    _register_user_view: RegisterUserView   # 親ビューの参照
     root_dir: str
     width: int
     height: int
     name: str
-    hashed_uid: str                     # NFCタグIDのSHA256ハッシュ値
-    name_label: ctk.CTkLabel            # ユーザー名ラベル
-    toggle_state_button: ctk.CTkButton  # ユーザー状態切替ボタン
-    delete_button: ctk.CTkButton        # ユーザー削除ボタン
+    hashed_uid: str                         # NFCタグIDのSHA256ハッシュ値
+    name_label: ctk.CTkLabel                # ユーザー名ラベル
+    toggle_state_button: ctk.CTkButton      # ユーザー状態切替ボタン
+    delete_button: ctk.CTkButton            # ユーザー削除ボタン
     def __init__(self, master: UsersList, root_dir: str, width: int, height: int, name: str, hashed_uid: str) -> None:
         super(UserInfoFrame, self).__init__(
             master=master,
@@ -296,7 +403,7 @@ class UserInfoFrame(ctk.CTkFrame):
                 dark_image=Image.open(f'{root_dir}/assets/icons/dark/person_remove.png'),
                 size=(button_height, button_height)
             ),
-            # command=self.delete_user,
+            command=self.delete_user,
             fg_color='transparent',
             bg_color='transparent',
             hover=True
@@ -311,7 +418,19 @@ class UserInfoFrame(ctk.CTkFrame):
             # ユーザー一覧を更新
             self._register_user_view.update_users_list()
 
-
+    def delete_user(self) -> None:
+        from ..windows import DeleteUserAlertWindow
+        window_width: int = int(min(self._register_user_view.width, self._register_user_view.height) * 0.75)
+        window_height: int = int(window_width*2 / 3) # 横長ウィンドウ (幅:高さ = 3:2)
+        DeleteUserAlertWindow(
+            master=self._register_user_view.master,
+            root_dir=self.root_dir,
+            width=window_width,
+            height=window_height,
+            deleted_user_name=self.name,
+            deleted_user_hashed_uid=self.hashed_uid,
+            title='Delete User Confirmation'
+        )
 
 # ユーザー一覧スクロールフレーム
 class UsersList(ctk.CTkScrollableFrame):
@@ -557,4 +676,8 @@ class RegisterUserView(ctk.CTkFrame):
     def update_users_list(self, user_state: UserState | None = None) -> None:
         # ユーザータブビューのユーザー一覧を更新
         self.users_tab_view.update_users_list(user_state)
-        self.update_idletasks()
+
+    # ユーザー登録ビューを更新
+    def update_idletasks(self):
+        self.update_users_list()
+        super(RegisterUserView, self).update_idletasks()

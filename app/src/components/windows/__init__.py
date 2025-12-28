@@ -7,5 +7,5 @@ from ._nfc_wait import (
 )
 
 from ._register_user import (
-    RegisterUserDetailWindow
+    RegisterUserDetailWindow, DeleteUserAlertWindow
 )

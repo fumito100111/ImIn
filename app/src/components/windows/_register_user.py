@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 import customtkinter as ctk
 from ...utils.nfc import NFC
 from ..windows import NFCWaitWindow
-from ..views import MainView, RegisterUserDetailView
+from ..views import MainView, RegisterUserDetailView, DeleteUserAlertView
 
 # ユーザー登録詳細ウィンドウ
 class RegisterUserDetailWindow(ctk.CTkToplevel):
@@ -130,3 +130,56 @@ class RegisterUserDetailWindow(ctk.CTkToplevel):
 
         # ユーザー登録詳細ウィンドウの終了
         self.destroy()
+
+class DeleteUserAlertWindow(ctk.CTkToplevel):
+    master: MainView
+    root_dir: str
+    width: int
+    height: int
+    deleted_user_name: str
+    deleted_user_hashed_uid: str
+    def __init__(self, master: MainView, root_dir: str, width: int, height: int, deleted_user_name: str, deleted_user_hashed_uid: str, title: str = 'Delete User Confirmation') -> None:
+        super(DeleteUserAlertWindow, self).__init__(master=master, width=width, height=height)
+        self.root_dir = root_dir
+        self.width = width
+        self.height = height
+
+        # ユーザー削除アラートウィンドウの非表示
+        self.withdraw()
+
+        # ユーザー削除アラートウィンドウの設定
+        self.title(title)
+        self.geometry(
+            f'{self.width}x{self.height}+{int((self.winfo_screenwidth() - self.width) / 2)}+{int((self.winfo_screenheight() - self.height) / 2)}'
+        )
+        self.update_idletasks()
+        self.resizable(False, False)
+
+        # ユーザー削除アラートビューの作成
+        DeleteUserAlertView(
+            master=self,
+            root_dir=self.root_dir,
+            width=self.width,
+            height=self.height,
+            deleted_user_name=deleted_user_name,
+            deleted_user_hashed_uid=deleted_user_hashed_uid
+        ).pack(fill=ctk.BOTH, expand=True)
+
+        # イベントの設定
+        self.protocol('WM_DELETE_WINDOW', self.destroy)
+
+        # メインウィンドウを非表示
+        self.master.master.withdraw()
+
+        # ユーザー削除アラートウィンドウの表示
+        self.deiconify()
+
+    # ユーザー削除アラートウィンドウの終了
+    def destroy(self) -> None:
+        # メインウィンドウを表示
+        self.master.master.deiconify()
+        # self.master.master.update_idletasks()
+        self.master.bodyview.update_idletasks()
+
+        # ユーザー削除アラートウィンドウの終了
+        super(DeleteUserAlertWindow, self).destroy()
