@@ -17,3 +17,8 @@ USER_STATE_LABELS: dict[UserState, str] = {     # ユーザーの在室状態の
     UserState.IN: '在室',
     UserState.OUT: '不在'
 }
+
+USER_ACTION_LABELS: dict[UserAction, str] = {  # ユーザーのアクションのラベル辞書
+    UserAction.ENTER: '入室',
+    UserAction.EXIT: '退室'
+}

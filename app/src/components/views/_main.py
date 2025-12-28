@@ -4,12 +4,14 @@ import enum
 import customtkinter as ctk
 from PIL import Image
 from..views import RegisterUserView, RegisterTokensView, AppInfoView, OSSLicenseView
+from ..windows._enter_exit_log import EnterExitLogWindow
 if TYPE_CHECKING:
     from ...app import App
 
 # メインビューの状態を定義する列挙型
 class ViewState(enum.IntEnum):
     NONE: int = -1                      # 無効な状態
+    ENTER_EXIT_LOG: int = enum.auto()   # 入退室記録
     REGISTER_USER: int = enum.auto()    # ユーザー登録
     REGISTER_TOKENS: int = enum.auto()  # Slack連携
     APP_INFO: int = enum.auto()         # アプリ情報
@@ -20,6 +22,10 @@ VIEW_STATE_DEFAULT: ViewState = ViewState.REGISTER_USER
 
 # 各ビューの情報を格納する辞書
 VIEW_INFO: dict[ViewState, dict[str, str]] = {
+    ViewState.ENTER_EXIT_LOG: {
+        'text': '入退室記録',
+        'icon': 'login.png'
+    },
     ViewState.REGISTER_USER: {
         'text': 'ユーザー登録',
         'icon': 'person_add.png'
@@ -166,23 +172,33 @@ class MainView(ctk.CTkFrame):
         # メインビューのボディ部分の作成
         self.switch_view(VIEW_STATE_DEFAULT)
 
+    # メインビューの状態を切り替え
     def switch_view(self, state: ViewState) -> None:
         if self.state != state:
             # 既存のボディビューを削除
             if hasattr(self, 'bodyview'):
                 self.bodyview.destroy()
 
-            # 以前の状態のナビゲーションボタンの有効化
-            if self.state in self.sidebar.navigation_buttons.keys():
+            # 以前の状態のナビゲーションボタンの有効化 (入退室記録ビューの場合は無効化しない)
+            if state != ViewState.ENTER_EXIT_LOG and self.state in self.sidebar.navigation_buttons.keys():
                 self.sidebar.navigation_buttons[self.state].configure(state=ctk.NORMAL)
 
             # 新しい状態のナビゲーションボタンの無効化
             if state in self.sidebar.navigation_buttons.keys():
-                self.sidebar.navigation_buttons[state].configure(state=ctk.DISABLED)
+                # 入退室記録ビューの場合は無効化しない (ウィンドウが別途開くため)
+                if state != ViewState.ENTER_EXIT_LOG:
+                    self.sidebar.navigation_buttons[state].configure(state=ctk.DISABLED)
 
             # 新しいボディビューの作成
             if state == ViewState.NONE:
                 pass
+
+            elif state == ViewState.ENTER_EXIT_LOG:
+                EnterExitLogWindow(
+                    master=self.master,
+                    width=self.master.winfo_screenwidth(),
+                    height=self.master.winfo_screenheight()
+                )
 
             elif state == ViewState.REGISTER_USER:
                 self.bodyview = RegisterUserView(
@@ -252,5 +268,12 @@ class MainView(ctk.CTkFrame):
             # メインビューの更新
             self.update_idletasks()
 
-            # 現在の状態を更新
-            self.state = state
+            # メインビューの状態を更新 (入退室記録ビューの場合は更新しない. 戻るときに元の状態で再描画するため)
+            if state != ViewState.ENTER_EXIT_LOG:
+                self.state = state
+
+    # メインビューの再描画
+    def redraw_view(self) -> None:
+        old_state: ViewState = self.state
+        self.state = ViewState.NONE
+        self.switch_view(old_state)

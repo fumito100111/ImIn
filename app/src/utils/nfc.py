@@ -21,7 +21,7 @@ COMMAND_GET_UID = [0xFF, 0xCA, 0x00, 0x00, 0x00] # NFCタグのUIDを取得す�
 
 # 各種タイムアウト設定
 DEFAULT_TIMEOUT_NFC_WAIT: float = 10e-2 # NFC読み取りのデフォルトの待機タイムアウト時間 (秒)
-DEFAULT_TIMEOUT_SAME_UID: float = 5.0   # 同じUIDを無視するデフォルトのタイムアウト時間 (秒)
+DEFAULT_TIMEOUT_SAME_UID: float = 3.0   # 同じUIDを無視するデフォルトのタイムアウト時間 (秒)
 
 # NFCのレスポンスを表すデータクラス
 @dataclasses.dataclass
@@ -74,6 +74,15 @@ class NFCSession(object):
             self.is_running = False
             if self._session is not None:
                 self._session.join()
+
+    # レスポンスを初期化するメソッド (もう一度読み取りを行うため)
+    def clear_response(self) -> None:
+        self.response = NFCResponse(
+            status=None,
+            uid=None,
+            error_message=None,
+            timestamp=time.time()
+        )
 
     # UIDを読み取るか想定外の例外が発生するまでループするメソッド
     def _read_uid_loop(self) -> None:
