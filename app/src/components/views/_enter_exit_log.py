@@ -2,8 +2,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import datetime
 import customtkinter as ctk
-from ...utils import UserState, UserAction
-from ...utils.nfc import NFC
+from ...utils import UserState, UserAction, USER_ACTION_LABELS
+from ...utils.nfc import UID, NFC
 from ...utils.db import (
     is_registered_user,
     get_user_info,
@@ -12,8 +12,11 @@ from ...utils.db import (
 if TYPE_CHECKING:
     from ..windows import EnterExitLogWindow
 
-DEFAULT_MAIN_LABEL_TEXT: str = 'ICカードをかざしてください'
-DEFAULT_NOT_CONNECTED_TEXT: str = 'NFCリーダーが接続されていません'
+# それぞれケースで表示するデフォルトテキスト
+DEFAULT_MAIN_LABEL_TEXT: str = 'ICカードをかざしてください' # NFCリーダーにNFCタグをかざすのを待機中
+DEFAULT_NOT_CONNECTED_TEXT: str = 'NFCリーダーが接続されていません' # NFCリーダーが接続されていない場合
+DEFAULT_NOT_REGISTERED_TEXT: str = '登録されていません' # 登録されていないNFCタグの場合
+
 
 class ClockLabel(ctk.CTkLabel):
     def __init__(self, master: EnterExitLogView, width: int, height: int) -> None:
@@ -114,8 +117,43 @@ class EnterExitLogView(ctk.CTkFrame):
 
     # NFCタグIDを読み取った時に呼ばれるコールバック関数
     def callback_by_read_nfc_uid(self) -> None:
-        # メインラベルに読み取った情報を表示
-        self.main_label.configure(text=f'{self.nfc.response.uid}\n読み取りました')
+        # 読み取ったUIDをハッシュ化
+        hashed_uid: str = self.nfc.response.uid.sha256()
+
+        # 登録されていないユーザーの場合
+        if not is_registered_user(root_dir=self.root_dir, id=hashed_uid):
+            self.main_label.configure(text=f'{DEFAULT_NOT_REGISTERED_TEXT}')
+
+        # 登録されているユーザーの場合
+        else:
+            # ユーザー情報を取得
+            user_info: dict[str, str] = get_user_info(root_dir=self.root_dir, id=hashed_uid)
+            user_name: str = user_info['name']
+            user_state: UserState = UserState(int(user_info['state']))
+
+            # ユーザーが在室中の場合 (アクション: 退室, ユーザー状態を不在に更新)
+            if user_state == UserState.IN:
+                user_action = UserAction.EXIT
+                user_state = UserState.OUT
+
+            # ユーザーが不在の場合 (アクション: 入室, ユーザー状態を在室中に更新)
+            else:
+                user_action = UserAction.ENTER
+                user_state = UserState.IN
+
+            # ユーザーの状態を更新に失敗した場合
+            if not update_user_state(
+                root_dir=self.root_dir,
+                id=hashed_uid,
+                state=user_state
+            ):
+                self.main_label.configure(text='もう一度かざしてください')
+                self.nfc.session.clear_response()
+
+            # ユーザーの状態を更新に成功した場合 (正常に処理が完了した場合)
+            else:
+                # メインラベルに読み取った情報を表示
+                self.main_label.configure(text=f'{USER_ACTION_LABELS[user_action]} :   {user_name}')
 
         # 1.0秒後にメインラベルをデフォルトの表示に戻す
         def clear_main_label() -> None:
