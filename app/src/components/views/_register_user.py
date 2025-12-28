@@ -424,7 +424,10 @@ class UserInfoFrame(ctk.CTkFrame):
     # ユーザー状態を切り替える
     def toggle_user_state(self) -> None:
         current_state: UserState = UserState(int(get_user_info(self.root_dir, self.hashed_uid)['state']))
-        new_state: UserState = UserState((current_state + 1) % 2)
+        if current_state == UserState.IN:
+            new_state: UserState = UserState.OUT
+        elif current_state == UserState.OUT:
+            new_state: UserState = UserState.IN
         if update_user_state(self.root_dir, self.hashed_uid, new_state):
             # ユーザー一覧を更新
             self._register_user_view.update_users_list()
