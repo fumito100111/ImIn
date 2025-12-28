@@ -2,7 +2,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import customtkinter as ctk
 from ..views import EntryExitLogView
-from ..windows._nfc_wait import NFCWaitWindow
 if TYPE_CHECKING:
     from ...app import App
     from ..views import ViewState
@@ -12,7 +11,7 @@ class EntryExitLogWindow(ctk.CTkToplevel):
     master: App
     width: int
     height: int
-    nfc_wait_window: NFCWaitWindow | None = None
+    view: EntryExitLogView
     id_nfc_observer: str | None = None
     def __init__(self, master: App, width: int, height: int) -> None:
         super(EntryExitLogWindow, self).__init__(master=master)
@@ -30,31 +29,27 @@ class EntryExitLogWindow(ctk.CTkToplevel):
         self.resizable(False, False)
 
         # 入退室記録ビューの作成
-        EntryExitLogView(
+        self.view = EntryExitLogView(
             master=self,
             width=self.width,
             height=self.height
-        ).pack(fill=ctk.BOTH, expand=True)
+        )
+        self.view.pack(fill=ctk.BOTH, expand=True)
 
         # イベントの設定
         self.protocol('WM_DELETE_WINDOW', self.destroy)
 
-        # メインウィンドウの非表示
-        self.master.withdraw()
-
         # 入退室記録ウィンドウの表示
         self.deiconify()
 
-        # 入退室記録ウィンドウにフォーカスを設定
-        def _focus() -> None:
-            self.lift()
-            self.focus_force()
-        self.after(100, _focus)
+        # メインウィンドウの非表示
+        self.master.withdraw()
 
     # 入退室記録ウィンドウの破棄
     def destroy(self) -> None:
         # フルスクリーンモードの解除
         self.attributes('-fullscreen', False)
+        self.update_idletasks()
 
         # メインウィンドウを元の状態で再描画
         self.master.view.redraw_view()

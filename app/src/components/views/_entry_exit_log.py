@@ -14,7 +14,6 @@ class EntryExitLogView(ctk.CTkFrame):
         super(EntryExitLogView, self).__init__(master=master, width=width, height=height)
         self.width = width
         self.height = height
-        self.nfc = NFC()
 
         ctk.CTkLabel(
             master=self,

@@ -196,8 +196,8 @@ class MainView(ctk.CTkFrame):
             elif state == ViewState.ENTER_EXIT_LOG:
                 EntryExitLogWindow(
                     master=self.master,
-                    width=self.master.width,
-                    height=self.master.height
+                    width=self.master.winfo_screenwidth(),
+                    height=self.master.winfo_screenheight()
                 )
 
             elif state == ViewState.REGISTER_USER:
