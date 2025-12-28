@@ -178,7 +178,6 @@ class DeleteUserAlertWindow(ctk.CTkToplevel):
     def destroy(self) -> None:
         # メインウィンドウを表示
         self.master.master.deiconify()
-        # self.master.master.update_idletasks()
         self.master.bodyview.update_idletasks()
 
         # ユーザー削除アラートウィンドウの終了
