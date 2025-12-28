@@ -147,7 +147,7 @@ class MainView(ctk.CTkFrame):
     width: int
     height: int
     sidebar: SideBar
-    bodyview: RegisterTokensView
+    bodyview: RegisterUserView | RegisterTokensView | AppInfoView | OSSLicenseView
     state: ViewState = ViewState.NONE
     def __init__(self, master: App) -> None:
         super(MainView, self).__init__(master=master, width=master.width, height=master.height, fg_color='transparent', bg_color='transparent')

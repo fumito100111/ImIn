@@ -1,1 +1,1 @@
-SELECT * FROM users WHERE state=:state ORDER BY updated_at;
+SELECT * FROM users WHERE state=:state ORDER BY updated_at DESC;
