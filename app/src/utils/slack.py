@@ -8,6 +8,7 @@ from slack_bolt import App as SlackApp
 from slack_sdk.web import SlackResponse
 from slack_sdk.errors import SlackApiError
 from ..utils import UserState, USER_STATE_LABELS
+from ..core import get_service
 from ..utils.db import get_users_by_state
 
 # SlackのセットアップについてのドキュメントURL
@@ -22,7 +23,8 @@ class SlackTokens(enum.IntEnum):
     SLACK_CANVAS_ID: int = enum.auto()
 
 # Slackのトークンが登録されているか確認する
-def is_registered_slack_tokens(service: str) -> bool:
+def is_registered_slack_tokens() -> bool:
+    service: str = get_service()
     for token in sorted(SlackTokens):
         if keyring.get_password(service, token.name) is None:
             return False
@@ -54,7 +56,8 @@ def is_valid_slack_tokens(bot_token: str, canvas_id: str) -> bool:
         return False
 
 # Slackのトークンを保存する
-def save_slack_tokens(service: str, tokens: dict[SlackTokens, str]) -> None:
+def save_slack_tokens(tokens: dict[SlackTokens, str]) -> None:
+    service: str = get_service()
     for key, token in tokens.items():
         if key == SlackTokens.SLACK_CANVAS_ID:
             # Canvas IDがURL形式の場合はID部分を抽出する
@@ -63,7 +66,8 @@ def save_slack_tokens(service: str, tokens: dict[SlackTokens, str]) -> None:
         keyring.set_password(service, key.name, token)
 
 # Slackのトークンを取得する
-def get_slack_tokens(service: str) -> dict[SlackTokens, str]:
+def get_slack_tokens() -> dict[SlackTokens, str]:
+    service: str = get_service()
     tokens: dict[SlackTokens, str] = dict[SlackTokens, str]()
     for key in sorted(SlackTokens):
         token: str | None = keyring.get_password(service, key.name)
@@ -71,27 +75,29 @@ def get_slack_tokens(service: str) -> dict[SlackTokens, str]:
     return tokens
 
 # Slackのトークンを削除する
-def delete_slack_tokens(service: str, tokens: dict[SlackTokens, str]) -> None:
+def delete_slack_tokens(tokens: dict[SlackTokens, str]) -> None:
+    service: str = get_service()
     for key in tokens.keys():
         keyring.delete_password(service, key.name)
 
 # Slackのキャンバスを置き換える
-def replace_slack_canvas(service: str, content: str) -> bool:
+def replace_slack_canvas(content: str) -> bool:
+    service: str = get_service()
     # Slackトークンが登録されていない場合はFalseを返す
-    if not is_registered_slack_tokens(service):
+    if not is_registered_slack_tokens():
         return False
 
     # Slackトークンが無効な場合はFalseを返す
     if not is_valid_slack_tokens(
-        get_slack_tokens(service)[SlackTokens.SLACK_BOT_TOKEN],
-        get_slack_tokens(service)[SlackTokens.SLACK_CANVAS_ID]
+        get_slack_tokens()[SlackTokens.SLACK_BOT_TOKEN],
+        get_slack_tokens()[SlackTokens.SLACK_CANVAS_ID]
     ):
         return False
 
     # 連携済みのSlackのキャンパスを置き換える.
     try:
         # Slackトークンを取得する
-        tokens: dict[SlackTokens, str] = get_slack_tokens(service)
+        tokens: dict[SlackTokens, str] = get_slack_tokens()
 
         # Slackアプリを初期化する
         slack_app: SlackApp = SlackApp(token=tokens[SlackTokens.SLACK_BOT_TOKEN])
@@ -116,8 +122,9 @@ def replace_slack_canvas(service: str, content: str) -> bool:
 
     return True
 
-# データベースの情報をもとに, Slackのキャンパスの内容を置き換える
-def update_slack_canvas_from_db(root_dir: str, service: str) -> bool:
+# データベースの情報をもとに, Slackのキャンバスの内容を置き換える
+def update_slack_canvas_from_db(root_dir: str) -> bool:
+    service: str = get_service()
     # ユーザー情報を取得する
     in_users: list[dict[str, str]] = get_users_by_state(root_dir=root_dir, state=UserState.IN)
     out_users: list[dict[str, str]] = get_users_by_state(root_dir=root_dir, state=UserState.OUT)
@@ -137,4 +144,4 @@ def update_slack_canvas_from_db(root_dir: str, service: str) -> bool:
         content += f'- {user['name']}\n'
 
     # Slackのキャンバスを置き換える
-    return replace_slack_canvas(service=service, content=content)
+    return replace_slack_canvas(content=content)

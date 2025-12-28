@@ -45,7 +45,7 @@ class App(ctk.CTk):
         self.protocol('WM_DELETE_WINDOW', self.destroy)
 
         # 初回起動時のSlackトークンの確認
-        if not is_registered_slack_tokens(f'{self.pyproject['project']['name']}-Service'):
+        if not is_registered_slack_tokens():
             SetupWindow(self)
 
         # Slackトークンが登録されている場合

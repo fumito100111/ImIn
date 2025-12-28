@@ -2,6 +2,7 @@ from __future__ import annotations
 import os
 import sqlite3
 import datetime
+import threading
 
 # データベースの名前
 DB_NAME: str = 'ImIn.db'
@@ -69,6 +70,12 @@ def update_user_state(root_dir: str, id: str, state: str) -> bool:
     except Exception as e:
         return False
 
+    # 削除に成功した場合, Slackのキャンバスを更新 (少し時間がかかるため, 非同期で実行)
+    def _update_canvas() -> None:
+        from ..utils.slack import update_slack_canvas_from_db
+        update_slack_canvas_from_db(root_dir=root_dir)
+    threading.Thread(target=_update_canvas).start()
+
     return True
 
 # ユーザーが登録されているか確認する
@@ -94,7 +101,15 @@ def is_registered_user(root_dir: str, id: str) -> bool:
 def register_user(root_dir: str, id: str, name: str, state: str, created_at: datetime.datetime | None = None, updated_at: datetime.datetime | None = None) -> bool:
     # 登録されていない場合はユーザーを挿入する
     if not is_registered_user(root_dir, id):
-        return insert_user(root_dir, id, name, state, created_at, updated_at)
+        res: bool = insert_user(root_dir, id, name, state, created_at, updated_at)
+        if res:
+            # 削除に成功した場合, Slackのキャンバスを更新 (少し時間がかかるため, 非同期で実行)
+            def _update_canvas() -> None:
+                from ..utils.slack import update_slack_canvas_from_db
+                update_slack_canvas_from_db(root_dir=root_dir)
+            threading.Thread(target=_update_canvas).start()
+
+        return res
 
     # 登録されている場合はFalseを返す
     else:
@@ -114,6 +129,12 @@ def delete_user(root_dir: str, id: str) -> bool:
     # 削除に失敗した場合はFalseを返す
     except Exception as e:
         return False
+
+    # 削除に成功した場合, Slackのキャンバスを更新 (少し時間がかかるため, 非同期で実行)
+    def _update_canvas() -> None:
+        from ..utils.slack import update_slack_canvas_from_db
+        update_slack_canvas_from_db(root_dir=root_dir)
+    threading.Thread(target=_update_canvas).start()
 
     return True
 
