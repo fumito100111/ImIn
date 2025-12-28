@@ -18,7 +18,7 @@ SLACK_BOT_TOKEN_SCOPES_DESCRIPTION: str = '※ \'files:read\', \'canvases:write\
 
 # Slackのトークンの種類を定義する列挙型
 class SlackTokens(enum.IntEnum):
-    SLACK_BOT_TOKEN: int = enum.auto()
+    SLACK_BOT_TOKEN: int = 0
     SLACK_CANVAS_ID: int = enum.auto()
 
 # Slackのトークンが登録されているか確認する
