@@ -15,6 +15,7 @@ class App(ctk.CTk):
     width: int
     height: int
     pyproject: dict[str, Any]
+    view: MainView
     def __init__(self, root_dir: str) -> None:
         super(App, self).__init__()
         # アプリケーションウィンドウの非表示
@@ -37,7 +38,8 @@ class App(ctk.CTk):
         self.resizable(False, False)
 
         # メインビューの作成
-        MainView(self).pack(fill='both', expand=True)
+        self.view = MainView(self)
+        self.view.pack(fill='both', expand=True)
 
         # イベントの設定
         self.protocol('WM_DELETE_WINDOW', self.destroy)
