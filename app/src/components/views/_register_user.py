@@ -8,6 +8,8 @@ from ...utils.nfc import UID, NFC
 from ...utils.db import (
     is_registered_user,
     register_user,
+    update_user_state,
+    get_user_info,
     get_users_by_state
 )
 from ..views import RegisterEntry, RegisterButton
@@ -222,11 +224,15 @@ class RegisterUserDetailView(ctk.CTkFrame):
 # ユーザー情報フレーム (編集, 削除ボタンなどを含む)
 class UserInfoFrame(ctk.CTkFrame):
     master: UsersList
+    _register_user_view: RegisterUserView  # 親ビューの参照
     root_dir: str
     width: int
     height: int
     name: str
-    hashed_uid: str    # NFCタグIDのSHA256ハッシュ値
+    hashed_uid: str                     # NFCタグIDのSHA256ハッシュ値
+    name_label: ctk.CTkLabel            # ユーザー名ラベル
+    toggle_state_button: ctk.CTkButton  # ユーザー状態切替ボタン
+    delete_button: ctk.CTkButton        # ユーザー削除ボタン
     def __init__(self, master: UsersList, root_dir: str, width: int, height: int, name: str, hashed_uid: str) -> None:
         super(UserInfoFrame, self).__init__(
             master=master,
@@ -236,6 +242,7 @@ class UserInfoFrame(ctk.CTkFrame):
             bg_color='transparent',
             corner_radius=int(min(width, height) * 0.1)
         )
+        self._register_user_view = master._master.master # RegisterUserViewへの参照 (UsersList -> UsersTabView -> RegisterUserView)
         self.root_dir = root_dir
         self.width = width
         self.height = height
@@ -243,12 +250,67 @@ class UserInfoFrame(ctk.CTkFrame):
         self.hashed_uid = hashed_uid
 
         # ユーザー名ラベルの作成
+        label_width: int = int(width * 0.6)
+        label_height: int = self.height
+        label_font_size: int = int(min(width, height) * 0.3)
         self.name_label = ctk.CTkLabel(
             master=self,
-            text=f'名前: {self.name}',
-            font=ctk.CTkFont(size=int(min(width, height) * 0.15))
+            text=self.name,
+            width=label_width,
+            height=label_height,
+            font=ctk.CTkFont(size=label_font_size),
+            anchor=ctk.W
         )
         self.name_label.place(relx=0.05, rely=0.5, anchor=ctk.W)
+
+        # ボタンアイコンのサイズ
+        button_width: int = int(min(width, height) * 0.5)
+        button_height: int = button_width
+
+        # ユーザー状態切替ボタンの作成
+        self.toggle_state_button = ctk.CTkButton(
+            master=self,
+            width=button_width,
+            height=button_height,
+            text='',
+            image=ctk.CTkImage(
+                light_image=Image.open(f'{root_dir}/assets/icons/light/check_in_out.png'),
+                dark_image=Image.open(f'{root_dir}/assets/icons/dark/check_in_out.png'),
+                size=(button_height, button_height)
+            ),
+            command=self.toggle_user_state,
+            fg_color='transparent',
+            bg_color='transparent',
+            hover=True
+        )
+        self.toggle_state_button.place(relx=0.75, rely=0.5, anchor=ctk.CENTER)
+
+        # ユーザー削除ボタンの作成
+        self.delete_button = ctk.CTkButton(
+            master=self,
+            width=button_width,
+            height=button_height,
+            text='',
+            image=ctk.CTkImage(
+                light_image=Image.open(f'{root_dir}/assets/icons/light/person_remove.png'),
+                dark_image=Image.open(f'{root_dir}/assets/icons/dark/person_remove.png'),
+                size=(button_height, button_height)
+            ),
+            # command=self.delete_user,
+            fg_color='transparent',
+            bg_color='transparent',
+            hover=True
+        )
+        self.delete_button.place(relx=0.9, rely=0.5, anchor=ctk.CENTER)
+
+    # ユーザー状態を切り替える
+    def toggle_user_state(self) -> None:
+        current_state: UserState = UserState(int(get_user_info(self.root_dir, self.hashed_uid)['state']))
+        new_state: UserState = UserState((current_state + 1) % 2)
+        if update_user_state(self.root_dir, self.hashed_uid, new_state):
+            # ユーザー一覧を更新
+            self._register_user_view.update_users_list()
+
 
 
 # ユーザー一覧スクロールフレーム
@@ -276,18 +338,33 @@ class UsersList(ctk.CTkScrollableFrame):
         self.user_state = user_state
 
         # ユーザー一覧を初期化
-        users: list[dict[str, str]] = get_users_by_state(root_dir, user_state)
-        for index, user in enumerate(users):
+        self.create_users_list()
+
+    # ユーザー一覧を作成
+    def create_users_list(self) -> None:
+        users: list[dict[str, str]] = get_users_by_state(self.root_dir, self.user_state)
+        frame_width: int = int(self.width * 0.9)
+        frame_height: int = int(self.height * 0.2)
+        for user in users:
             user_info_frame = UserInfoFrame(
                 master=self,
-                root_dir=root_dir,
-                width=int(width * 0.9),
-                height=int(height * 0.1),
+                root_dir=self.root_dir,
+                width=frame_width,
+                height=frame_height,
                 name=user['name'],
                 hashed_uid=user['id']
             )
-            user_info_frame.pack(pady=int(height * 0.02))
+            user_info_frame.pack(pady=int(self.height * 0.02))
             self.user_info_frames.append(user_info_frame)
+
+        # レイアウトを更新
+        self.update_idletasks()
+
+    # ユーザー一覧をクリア
+    def clear_users_list(self) -> None:
+        for user_info_frame in self.user_info_frames:
+            user_info_frame.destroy()
+        self.user_info_frames = list[UserInfoFrame]()
 
     # ユーザー一覧を更新
     def update_users_list(self, user_state: UserState | None = None) -> None:
@@ -296,24 +373,10 @@ class UsersList(ctk.CTkScrollableFrame):
             self.user_state = user_state
 
         # 古いユーザー一覧をクリア
-        for user_info_frame in self.user_info_frames:
-            user_info_frame.destroy()
-        self.user_info_frames = list[UserInfoFrame]()
+        self.clear_users_list()
 
         # ここにユーザー一覧を再取得して表示するコードを追加
-        users: list[dict[str, str]] = get_users_by_state(self.root_dir, self.user_state)
-        for index, user in enumerate(users):
-            user_info_frame = UserInfoFrame(
-                master=self,
-                root_dir=self.root_dir,
-                width=int(self.width * 0.9),
-                height=int(self.height * 0.1),
-                name=user['name'],
-                hashed_uid=user['id']
-            )
-            user_info_frame.pack(pady=int(self.height * 0.02))
-            self.user_info_frames.append(user_info_frame)
-        self.update_idletasks()
+        self.create_users_list()
 
 # ユーザータブボタンのコンポーネント
 class TabButton(ctk.CTkButton):
@@ -341,7 +404,7 @@ class TabButton(ctk.CTkButton):
 
     # タブがクリックされたときの動作
     def _command(self) -> None:
-        # ユーザー一覧を更新
+        # ユーザー一覧を更新 (RegisterUserView経由)
         self.master.master.update_users_list(self.user_state)
 
 # タブフレームのコンポーネント
