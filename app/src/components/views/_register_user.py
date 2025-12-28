@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 import tkinter as tk
 import customtkinter as ctk
 from PIL import Image
@@ -7,7 +7,8 @@ from ...utils import UserState, UserAction, DEFAULT_USER_STATE
 from ...utils.nfc import UID, NFC
 from ...utils.db import (
     is_registered_user,
-    register_user
+    register_user,
+    get_users_by_state
 )
 from ..views import RegisterEntry, RegisterButton
 if TYPE_CHECKING:
@@ -216,17 +217,45 @@ class RegisterUserDetailView(ctk.CTkFrame):
 # ユーザー情報フレーム (編集, 削除ボタンなどを含む)
 class UserInfoFrame(ctk.CTkFrame):
     master: UsersList
+    root_dir: str
+    width: int
+    height: int
+    name: str
+    hashed_uid: str    # NFCタグIDのSHA256ハッシュ値
+    def __init__(self, master: UsersList, root_dir: str, width: int, height: int, name: str, hashed_uid: str) -> None:
+        super(UserInfoFrame, self).__init__(
+            master=master,
+            width=width,
+            height=height,
+            fg_color=ctk.ThemeManager.theme['CTkFrame']['fg_color'],
+            bg_color='transparent',
+            corner_radius=int(min(width, height) * 0.1)
+        )
+        self.root_dir = root_dir
+        self.width = width
+        self.height = height
+        self.name = name
+        self.hashed_uid = hashed_uid
+
+        # ユーザー名ラベルの作成
+        self.name_label = ctk.CTkLabel(
+            master=self,
+            text=f'名前: {self.name}',
+            font=ctk.CTkFont(size=int(min(width, height) * 0.15))
+        )
+        self.name_label.place(relx=0.05, rely=0.5, anchor=ctk.W)
 
 
 # ユーザー一覧スクロールフレーム
 class UsersList(ctk.CTkScrollableFrame):
-    master: ctk.CTkCanvas           # CT_kScrollableFrameのmasterはCTkCanvas型になるため
-    _master: UsersTabView           # 親ビューの参照
+    master: ctk.CTkCanvas                                           # CT_kScrollableFrameのmasterはCTkCanvas型になるため
+    _master: UsersTabView                                           # 親ビューの参照
     root_dir: str
     width: int
     height: int
-    user_state: UserState | None    # ユーザー状態フィルター (Noneの場合は全ユーザー表示)
-    def __init__(self, master: UsersTabView, root_dir: str, width: int, height: int, user_state: UserState | None = None) -> None:
+    user_state: UserState                                           # ユーザー状態フィルター
+    user_info_frames: list[UserInfoFrame] = list[UserInfoFrame]()   # ユーザー情報フレームのリスト (状態の更新順)
+    def __init__(self, master: UsersTabView, root_dir: str, width: int, height: int, user_state: UserState = DEFAULT_USER_STATE) -> None:
         super(UsersList, self).__init__(
             master=master,
             width=width,
@@ -241,25 +270,46 @@ class UsersList(ctk.CTkScrollableFrame):
         self.height = height
         self.user_state = user_state
 
-        self.label = ctk.CTkLabel(
-            master=self,
-            text=f'ユーザー一覧 (フィルター: {user_state.name})'
-        )
-        self.label.pack(pady=10)
+        # ユーザー一覧を初期化
+        users: list[dict[str, str]] = get_users_by_state(root_dir, user_state)
+        for index, user in enumerate(users):
+            user_info_frame = UserInfoFrame(
+                master=self,
+                root_dir=root_dir,
+                width=int(width * 0.9),
+                height=int(height * 0.1),
+                name=user['name'],
+                hashed_uid=user['id']
+            )
+            user_info_frame.pack(pady=int(height * 0.02))
+            self.user_info_frames.append(user_info_frame)
 
-    def update_users_list(self, user_state: UserState) -> None:
+    # ユーザー一覧を更新
+    def update_users_list(self, user_state: UserState | None = None) -> None:
         # ユーザー状態フィルターが変更された場合にリストを更新
         if self.user_state != user_state:
             # フィルター状態を更新
             self.user_state = user_state
 
             # 古いユーザー一覧をクリア
-            # for widget in self.winfo_children():
-            #     widget.destroy()
+            for user_info_frame in self.user_info_frames:
+                user_info_frame.destroy()
+            self.user_info_frames = list[UserInfoFrame]()
 
             # ここにユーザー一覧を再取得して表示するコードを追加
-            self.label.configure(text=f'ユーザー一覧 (フィルター: {user_state.name})')
-            self.update_idletasks()
+            users: list[dict[str, str]] = get_users_by_state(self.root_dir, self.user_state)
+            for index, user in enumerate(users):
+                user_info_frame = UserInfoFrame(
+                    master=self,
+                    root_dir=self.root_dir,
+                    width=int(self.width * 0.9),
+                    height=int(self.height * 0.1),
+                    name=user['name'],
+                    hashed_uid=user['id']
+                )
+                user_info_frame.pack(pady=int(self.height * 0.02))
+                self.user_info_frames.append(user_info_frame)
+            # self.update_idletasks()
 
 
 # ユーザータブボタンのコンポーネント
