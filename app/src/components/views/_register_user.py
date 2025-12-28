@@ -238,7 +238,7 @@ class UserInfoFrame(ctk.CTkFrame):
             master=master,
             width=width,
             height=height,
-            fg_color=ctk.ThemeManager.theme['CTkFrame']['fg_color'],
+            # fg_color='transparent',
             bg_color='transparent',
             corner_radius=int(min(width, height) * 0.1)
         )
@@ -329,6 +329,7 @@ class UsersList(ctk.CTkScrollableFrame):
             height=height,
             label_font=ctk.CTkFont(size=int(min(width, height) * 0.1)),
             corner_radius=int(min(width, height) * 0.02),
+            fg_color='transparent',
             bg_color='transparent'
         )
         self._master = master
@@ -471,7 +472,7 @@ class UsersTabView(ctk.CTkFrame):
             master=master,
             width=width,
             height=height,
-            fg_color='transparent',
+            # fg_color='transparent',
             bg_color='transparent'
         )
         self.root_dir = root_dir
@@ -487,7 +488,7 @@ class UsersTabView(ctk.CTkFrame):
             width=tab_frame_width,
             height=tab_frame_height
         )
-        self.tab_frame.place(relx=0.5, rely=0, anchor=ctk.N)
+        self.tab_frame.place(relx=0.5, rely=0.025, anchor=ctk.N)
 
         # ユーザー一覧の作成 (初期状態は在室者タブ)
         self.users_list = UsersList(
