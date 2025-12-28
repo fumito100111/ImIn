@@ -232,6 +232,7 @@ class DeleteUserAlertView(ctk.CTkFrame):
     alert_label: ctk.CTkLabel
     confirm_button: ctk.CTkButton
     cancel_button: ctk.CTkButton
+    id_status_message: str | None = None
     def __init__(self, master: DeleteUserAlertWindow, root_dir: str, width: int, height: int, deleted_user_name: str, deleted_user_hashed_uid: str) -> None:
         super(DeleteUserAlertView, self).__init__(
             master=master,
@@ -305,7 +306,7 @@ class DeleteUserAlertView(ctk.CTkFrame):
 
                 # ユーザー削除アラートビューを終了
                 self.master.destroy()
-            self.after(1000, _close_window)
+            self.id_status_message = self.after(1000, _close_window)
 
         # ユーザー削除に失敗した場合
         else:
@@ -322,7 +323,17 @@ class DeleteUserAlertView(ctk.CTkFrame):
                 # ユーザー削除アラートビューを終了 (キャンセルと同じ動作)
                 self.cancel_delete_user()
 
-            self.after(1000, _clear_error_message)
+            self.id_status_message = self.after(1000, _clear_error_message)
+
+    # ユーザーアラートビューを破棄
+    def destroy(self) -> None:
+        # ステータスメッセージのafterイベントをキャンセル
+        if self.id_status_message is not None:
+            self.after_cancel(self.id_status_message)
+            self.id_status_message = None
+
+        # ユーザー削除アラートビューの破棄
+        super(DeleteUserAlertView, self).destroy()
 
     # ユーザー削除をキャンセル
     def cancel_delete_user(self) -> None:
