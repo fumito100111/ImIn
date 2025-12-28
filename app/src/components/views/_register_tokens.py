@@ -106,9 +106,8 @@ class RegisterTokensView(ctk.CTkFrame):
         self.bot_token_entry.entry.focus_set()
 
         # トークンが既に登録されている場合はエントリーに表示
-        service: str = f'{self.master.master.pyproject['project']['name']}-Service'
-        if is_registered_slack_tokens(service=service):
-            tokens: dict[SlackTokens, str] = get_slack_tokens(service=service)
+        if is_registered_slack_tokens():
+            tokens: dict[SlackTokens, str] = get_slack_tokens()
             self.bot_token_entry.entry.insert(0, tokens[SlackTokens.SLACK_BOT_TOKEN])
             self.canvas_id_entry.entry.insert(0, tokens[SlackTokens.SLACK_CANVAS_ID])
 
@@ -127,8 +126,7 @@ class RegisterTokensView(ctk.CTkFrame):
         if is_valid_slack_tokens(bot_token=bot_token, canvas_id=canvas_id):
             # トークンの保存
             from ..windows import SetupWindow
-            service: str = f'{self.master.master.pyproject['project']['name']}-Service'
-            save_slack_tokens(service=service, tokens={
+            save_slack_tokens(tokens={
                 SlackTokens.SLACK_BOT_TOKEN: bot_token,
                 SlackTokens.SLACK_CANVAS_ID: canvas_id
             })
@@ -156,8 +154,7 @@ class RegisterTokensView(ctk.CTkFrame):
                 self.after(2000, _clear_success_message)
 
                 # エントリーに登録したトークンを表示
-                service: str = f'{self.master.master.pyproject['project']['name']}-Service'
-                tokens: dict[SlackTokens, str] = get_slack_tokens(service=service)
+                tokens: dict[SlackTokens, str] = get_slack_tokens()
                 self.bot_token_entry.entry.delete(0, ctk.END)
                 self.bot_token_entry.entry.insert(0, tokens[SlackTokens.SLACK_BOT_TOKEN])
                 self.canvas_id_entry.entry.delete(0, ctk.END)
@@ -184,9 +181,8 @@ class RegisterTokensView(ctk.CTkFrame):
             self.canvas_id_entry.entry.delete(0, ctk.END)
 
             # 既にトークンが登録されている場合はエントリーに表示
-            service: str = f'{self.master.master.pyproject['project']['name']}-Service'
-            if is_registered_slack_tokens(service=service):
-                tokens: dict[SlackTokens, str] = get_slack_tokens(service=service)
+            if is_registered_slack_tokens():
+                tokens: dict[SlackTokens, str] = get_slack_tokens()
                 self.bot_token_entry.entry.insert(0, tokens[SlackTokens.SLACK_BOT_TOKEN])
                 self.canvas_id_entry.entry.insert(0, tokens[SlackTokens.SLACK_CANVAS_ID])
 
@@ -203,9 +199,8 @@ class RegisterTokensView(ctk.CTkFrame):
 
         if bot_token != '' and canvas_id != '':
             # 既にトークンが登録されている場合は変更がある場合のみ有効化
-            service: str = f'{self.master.master.pyproject['project']['name']}-Service'
-            if is_registered_slack_tokens(service=service):
-                tokens: dict[SlackTokens, str] = get_slack_tokens(service=service)
+            if is_registered_slack_tokens():
+                tokens: dict[SlackTokens, str] = get_slack_tokens()
                 if bot_token != tokens[SlackTokens.SLACK_BOT_TOKEN] or canvas_id != tokens[SlackTokens.SLACK_CANVAS_ID]:
                     self.register_button.configure(state=ctk.NORMAL)
                 else:
