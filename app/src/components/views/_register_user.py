@@ -151,6 +151,11 @@ class RegisterUserDetailView(ctk.CTkFrame):
             self.user_name_entry.description.configure(text='ユーザーが正常に登録されました', text_color='green')
             def _close_window() -> None:
                 self.user_name_entry.description.configure(text='', text_color=text_color)
+
+                # ユーザーリストビューを更新
+                if isinstance(self.master.master.bodyview, RegisterUserView):
+                    self.master.master.bodyview.update_users_list()
+
                 self.master.destroy()
             self.after(1000, _close_window)
 
@@ -310,7 +315,6 @@ class UsersList(ctk.CTkScrollableFrame):
             self.user_info_frames.append(user_info_frame)
         self.update_idletasks()
 
-
 # ユーザータブボタンのコンポーネント
 class TabButton(ctk.CTkButton):
     master: TabFrame
@@ -384,7 +388,8 @@ class TabFrame(ctk.CTkFrame):
     def update_users_list(self, user_state: UserState | None = None) -> None:
         # タブの状態を更新
         for _user_state, tab in self.tabs.items():
-            if _user_state == user_state:
+            # 更新対象のタブの場合は無効化
+            if _user_state == user_state or (_user_state == self.master.users_list.user_state and user_state is None):
                 tab.configure(state=ctk.DISABLED)
                 tab.configure(fg_color=ctk.ThemeManager.theme['CTkButton']['fg_color'])
             else:
@@ -483,3 +488,9 @@ class RegisterUserView(ctk.CTkFrame):
             width=self.width,
             height=self.height
         )
+
+    # ユーザー一覧を更新
+    def update_users_list(self, user_state: UserState | None = None) -> None:
+        # ユーザータブビューのユーザー一覧を更新
+        self.users_tab_view.update_users_list(user_state)
+        self.update_idletasks()
