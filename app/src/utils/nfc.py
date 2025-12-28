@@ -75,6 +75,15 @@ class NFCSession(object):
             if self._session is not None:
                 self._session.join()
 
+    # レスポンスを初期化するメソッド (もう一度読み取りを行うため)
+    def clear_response(self) -> None:
+        self.response = NFCResponse(
+            status=None,
+            uid=None,
+            error_message=None,
+            timestamp=time.time()
+        )
+
     # UIDを読み取るか想定外の例外が発生するまでループするメソッド
     def _read_uid_loop(self) -> None:
         while self.is_running:
