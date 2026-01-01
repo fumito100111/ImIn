@@ -220,6 +220,6 @@ class OSSLicenseView(ctk.CTkFrame):
                 continue
 
             # ライセンス情報の読み込み
-            oss_name: str = oss.replace('LICENSE_', '').replace('-', ' ') # 例: 'LICENSE_Google-Material-Symbols-and-Icons' -> 'Google Material Symbols and Icons'
+            oss_name: str = oss.replace('LICENSE_', '').replace('--', '<escape hyphen>').replace('-', ' ').replace('<escape hyphen>', '-') # 例: 'LICENSE_Google-Material-Symbols-and-Icons' -> 'Google Material Symbols and Icons'
             with open(f'{root_dir}/assets/licenses/{oss}', 'r', encoding='utf-8') as f:
                 self.licenses[oss_name] = f.read()
