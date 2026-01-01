@@ -239,19 +239,6 @@ class MainView(ctk.CTkFrame):
                     anchor=ctk.NW
                 )
 
-            elif state == ViewState.APP_INFO:
-                self.bodyview = AppInfoView(
-                    master=self,
-                    root_dir=self.master.root_dir,
-                    width=int(self.width * (3 / 4)),
-                    height=self.height
-                )
-                self.bodyview.place(
-                    relx=self.sidebar.width / self.width,
-                    rely=0.0,
-                    anchor=ctk.NW
-                )
-
             elif state == ViewState.OSS_LICENSE:
                 self.bodyview = OSSLicenseView(
                     master=self,
