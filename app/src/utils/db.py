@@ -1,4 +1,5 @@
 from ._db import (
+    initialize_db,
     create_users_table,
     is_registered_user,
     register_user,

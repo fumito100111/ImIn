@@ -5,6 +5,7 @@ import customtkinter as ctk
 from .components.windows import SetupWindow
 from .components.views import MainView
 from .utils.slack import is_registered_slack_tokens
+from .utils.db import initialize_db
 
 WIDTH_RATIO: int = 4                # アプリケーションウィンドウの幅の比率
 HEIGHT_RATIO: int = 3               # アプリケーションウィンドウの高さの比率
@@ -46,6 +47,10 @@ class App(ctk.CTk):
 
         # 初回起動時のSlackトークンの確認
         if not is_registered_slack_tokens():
+            # データベースの初期化
+            initialize_db(self.root_dir)
+
+            # セットアップウィンドウの表示
             SetupWindow(self)
 
         # Slackトークンが登録されている場合
