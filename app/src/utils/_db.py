@@ -31,6 +31,11 @@ def create_users_table(root_dir: str) -> bool:
 
     return True
 
+# データベースを初期化する
+def initialize_db(root_dir: str) -> bool:
+    res: bool = create_users_table(root_dir)
+    return res
+
 # ユーザーを挿入する
 def insert_user(root_dir: str, id: str, name: str, state: str, created_at: datetime.datetime | None = None, updated_at: datetime.datetime | None = None) -> bool:
     try:
