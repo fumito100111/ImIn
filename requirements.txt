@@ -1,0 +1,16 @@
+customtkinter==5.2.2
+darkdetect==0.8.0
+jaraco.classes==3.4.0
+jaraco.context==6.0.2
+jaraco.functools==4.4.0
+keyring==25.7.0
+more-itertools==10.8.0
+Nuitka==2.8.9
+ordered-set==4.1.0
+packaging==25.0
+pillow==12.0.0
+pip==25.3
+pyscard==2.3.1
+slack_bolt==1.27.0
+slack_sdk==3.39.0
+zstandard==0.25.0
