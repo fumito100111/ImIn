@@ -3,18 +3,20 @@ import os
 import sqlite3
 import datetime
 import threading
+from ..core import get_data_dir
 
 # データベースの名前
 DB_NAME: str = 'ImIn.db'
+DB_PATH: str = f'{get_data_dir()}/db/{DB_NAME}'
 
 # データベースに接続する
-def connection_db(root_dir: str) -> sqlite3.Connection:
-    return sqlite3.connect(f'{root_dir}/db/{DB_NAME}')
+def connection_db() -> sqlite3.Connection:
+    return sqlite3.connect(DB_PATH)
 
 # ユーザーテーブルを作成する
 def create_users_table(root_dir: str) -> bool:
     try:
-        connection: sqlite3.Connection = connection_db(root_dir)
+        connection: sqlite3.Connection = connection_db()
         cursor: sqlite3.Cursor = connection.cursor()
         with open(f'{root_dir}/db/sql/0000_create_users_table.sql', 'r') as f:
             sql: str = f.read()
@@ -33,13 +35,14 @@ def create_users_table(root_dir: str) -> bool:
 
 # データベースを初期化する
 def initialize_db(root_dir: str) -> bool:
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     res: bool = create_users_table(root_dir)
     return res
 
 # ユーザーを挿入する
 def insert_user(root_dir: str, id: str, name: str, state: str, created_at: datetime.datetime | None = None, updated_at: datetime.datetime | None = None) -> bool:
     try:
-        connection: sqlite3.Connection = connection_db(root_dir)
+        connection: sqlite3.Connection = connection_db()
         cursor: sqlite3.Cursor = connection.cursor()
         with open(f'{root_dir}/db/sql/0001_insert_user.sql', 'r') as f:
             sql: str = f.read()
@@ -62,7 +65,7 @@ def insert_user(root_dir: str, id: str, name: str, state: str, created_at: datet
 # ユーザーの状態を更新する
 def update_user_state(root_dir: str, id: str, state: str) -> bool:
     try:
-        connection: sqlite3.Connection = connection_db(root_dir)
+        connection: sqlite3.Connection = connection_db()
         cursor: sqlite3.Cursor = connection.cursor()
         with open(f'{root_dir}/db/sql/0002_update_user_state.sql', 'r') as f:
             sql: str = f.read()
@@ -86,7 +89,7 @@ def update_user_state(root_dir: str, id: str, state: str) -> bool:
 # ユーザーが登録されているか確認する
 def is_registered_user(root_dir: str, id: str) -> bool:
     try:
-        connection: sqlite3.Connection = connection_db(root_dir)
+        connection: sqlite3.Connection = connection_db()
         cursor: sqlite3.Cursor = connection.cursor()
         with open(f'{root_dir}/db/sql/0003_select_all_from_users_where_id.sql', 'r') as f:
             sql: str = f.read()
@@ -123,7 +126,7 @@ def register_user(root_dir: str, id: str, name: str, state: str, created_at: dat
 # ユーザー情報を削除する
 def delete_user(root_dir: str, id: str) -> bool:
     try:
-        connection: sqlite3.Connection = connection_db(root_dir)
+        connection: sqlite3.Connection = connection_db()
         cursor: sqlite3.Cursor = connection.cursor()
         with open(f'{root_dir}/db/sql/0005_delete_from_users_where_id.sql', 'r') as f:
             sql: str = f.read()
@@ -146,7 +149,7 @@ def delete_user(root_dir: str, id: str) -> bool:
 # ユーザー情報を取得する
 def get_user_info(root_dir: str, id: str) -> dict[str, str] | None:
     try:
-        connection: sqlite3.Connection = connection_db(root_dir)
+        connection: sqlite3.Connection = connection_db()
         cursor: sqlite3.Cursor = connection.cursor()
         with open(f'{root_dir}/db/sql/0003_select_all_from_users_where_id.sql', 'r') as f:
             sql: str = f.read()
@@ -172,7 +175,7 @@ def get_user_info(root_dir: str, id: str) -> dict[str, str] | None:
 # 特定の状態のユーザー一覧を取得する
 def get_users_by_state(root_dir: str, state: str) -> list[dict[str, str]]:
     try:
-        connection: sqlite3.Connection = connection_db(root_dir)
+        connection: sqlite3.Connection = connection_db()
         cursor: sqlite3.Cursor = connection.cursor()
         with open(f'{root_dir}/db/sql/0004_select_all_from_users_where_state.sql', 'r') as f:
             sql: str = f.read()
