@@ -133,9 +133,6 @@ class RegisterTokensView(ctk.CTkFrame):
             })
 
             if isinstance(self.master, SetupWindow):
-                # セットアップウィンドウの終了
-                self.master.destroy()
-
                 # メインウィンドウの表示
                 self.master.master.deiconify()
 
@@ -144,6 +141,9 @@ class RegisterTokensView(ctk.CTkFrame):
                     self.master.master.lift()
                     self.master.master.focus_force()
                 self.master.master.after(100, _focus)
+
+                # セットアップウィンドウの終了
+                self.master.destroy()
 
             else:
                 # 成功メッセージの表示
