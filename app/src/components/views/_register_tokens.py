@@ -117,6 +117,7 @@ class RegisterTokensView(ctk.CTkFrame):
 
         # 登録ボタンを無効化
         self.register_button.configure(state=ctk.DISABLED)
+        self.register_button.update_idletasks()
 
         # エントリーからトークンを取得
         bot_token: str = self.bot_token_entry.entry.get().strip()
