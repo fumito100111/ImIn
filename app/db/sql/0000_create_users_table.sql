@@ -1,0 +1,7 @@
+CREATE TABLE `users` (
+    `id` CHAR(64) PRIMARY KEY NOT NULL,
+    `name` TEXT NOT NULL,
+    `state` TEXT NOT NULL,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP
+);

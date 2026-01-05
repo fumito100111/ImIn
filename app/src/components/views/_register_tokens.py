@@ -7,32 +7,32 @@ from PIL import Image
 from ...utils.slack import SlackTokens, is_registered_slack_tokens, get_slack_tokens, is_valid_slack_tokens, save_slack_tokens, SLACK_BOT_TOKEN_SCOPES_DESCRIPTION, SLACK_SETUP_DOCUMENT_URL
 if TYPE_CHECKING:
     from ..windows import SetupWindow
-    from ..views import MainView
+    from ..views import MainView, RegisterUserDetailView
 
 # 登録用エントリーのコンポーネント
 class RegisterEntry(ctk.CTkFrame):
-    master: RegisterTokensView
+    master: RegisterTokensView | RegisterUserDetailView
     width: int
     height: int
     label: ctk.CTkLabel
     entry: ctk.CTkEntry
     description: ctk.CTkLabel
-    def __init__(self, master: RegisterTokensView, width: int, height: int, text: str, description: str = '', show: str | None = None) -> None:
+    def __init__(self, master: RegisterTokensView | RegisterUserDetailView, width: int, height: int, text: str, description: str = '', show: str | None = None) -> None:
         super(RegisterEntry, self).__init__(master=master, width=width, height=height, fg_color='transparent')
         self.width = width
         self.height = height
 
         # ラベルの作成
-        label_width: int = int(self.width / 3)
+        label_width: int = int(self.width * 0.4)
         label_height: int = int(self.height / 7.5)
-        label_font: ctk.CTkFont = ctk.CTkFont(size=int(label_height / 2))
-        self.label = ctk.CTkLabel(master=self, text=text, width=label_width, height=label_height, corner_radius=int(label_height / 4), font=label_font)
+        label_font: ctk.CTkFont = ctk.CTkFont(size=int(min(label_width, label_height) / 1.25))
+        self.label = ctk.CTkLabel(master=self, text=text, width=label_width, height=label_height, corner_radius=int(label_height / 4), font=label_font, anchor=ctk.W)
         self.label.place(relx=0.05, rely=0.2, anchor=ctk.NW)
 
         # エントリーの作成
         entry_width: int = int(self.width * 0.7)
-        entry_height: int = int(self.height / 7.5)
-        entry_font: ctk.CTkFont = ctk.CTkFont(size=int(entry_height / 2))
+        entry_height: int = int(self.height / 6)
+        entry_font: ctk.CTkFont = ctk.CTkFont(size=int(min(entry_width, entry_height) / 2))
         self.entry = ctk.CTkEntry(master=self, width=entry_width, height=entry_height, corner_radius=int(entry_height / 4), font=entry_font, show=show, justify=ctk.CENTER)
         self.entry.place(relx=0.5, rely=0.5, anchor=ctk.N)
 
@@ -83,12 +83,16 @@ class RegisterTokensView(ctk.CTkFrame):
         self.help_label.bind('<Button-1>', lambda event: webbrowser.open_new_tab(SLACK_SETUP_DOCUMENT_URL))
         self.help_label.place(relx=0.99, rely=0.01, anchor=ctk.NE)
 
+        # エントリーの設定
+        register_entry_width: int = width
+        register_entry_height: int = int(height * 0.4)
+
         # Slackのボットトークンのエントリーを作成
-        self.bot_token_entry = RegisterEntry(master=self, width=width, height=int(height * 0.4), text='Slack Bot トークン', description=SLACK_BOT_TOKEN_SCOPES_DESCRIPTION, show="*")
+        self.bot_token_entry = RegisterEntry(master=self, width=register_entry_width, height=register_entry_height, text='Slack Bot トークン', description=SLACK_BOT_TOKEN_SCOPES_DESCRIPTION, show="*")
         self.bot_token_entry.place(relx=0.5, rely=0.05, anchor=ctk.N)
 
         # CanvasのIDエントリーを作成
-        self.canvas_id_entry = RegisterEntry(master=self, width=width, height=int(height * 0.4), text='Canvas ID')
+        self.canvas_id_entry = RegisterEntry(master=self, width=register_entry_width, height=register_entry_height, text='Canvas ID')
         self.canvas_id_entry.place(relx=0.5, rely=0.45, anchor=ctk.N)
 
         # 登録ボタンを作成
@@ -102,9 +106,8 @@ class RegisterTokensView(ctk.CTkFrame):
         self.bot_token_entry.entry.focus_set()
 
         # トークンが既に登録されている場合はエントリーに表示
-        service: str = f'{self.master.master.pyproject['project']['name']}-Service'
-        if is_registered_slack_tokens(service=service):
-            tokens: dict[SlackTokens, str] = get_slack_tokens(service=service)
+        if is_registered_slack_tokens():
+            tokens: dict[SlackTokens, str] = get_slack_tokens()
             self.bot_token_entry.entry.insert(0, tokens[SlackTokens.SLACK_BOT_TOKEN])
             self.canvas_id_entry.entry.insert(0, tokens[SlackTokens.SLACK_CANVAS_ID])
 
@@ -114,6 +117,7 @@ class RegisterTokensView(ctk.CTkFrame):
 
         # 登録ボタンを無効化
         self.register_button.configure(state=ctk.DISABLED)
+        self.register_button.update_idletasks()
 
         # エントリーからトークンを取得
         bot_token: str = self.bot_token_entry.entry.get().strip()
@@ -123,16 +127,12 @@ class RegisterTokensView(ctk.CTkFrame):
         if is_valid_slack_tokens(bot_token=bot_token, canvas_id=canvas_id):
             # トークンの保存
             from ..windows import SetupWindow
-            service: str = f'{self.master.master.pyproject['project']['name']}-Service'
-            save_slack_tokens(service=service, tokens={
+            save_slack_tokens(tokens={
                 SlackTokens.SLACK_BOT_TOKEN: bot_token,
                 SlackTokens.SLACK_CANVAS_ID: canvas_id
             })
 
             if isinstance(self.master, SetupWindow):
-                # セットアップウィンドウの終了
-                self.master.destroy()
-
                 # メインウィンドウの表示
                 self.master.master.deiconify()
 
@@ -141,6 +141,9 @@ class RegisterTokensView(ctk.CTkFrame):
                     self.master.master.lift()
                     self.master.master.focus_force()
                 self.master.master.after(100, _focus)
+
+                # セットアップウィンドウの終了
+                self.master.destroy()
 
             else:
                 # 成功メッセージの表示
@@ -152,8 +155,7 @@ class RegisterTokensView(ctk.CTkFrame):
                 self.after(2000, _clear_success_message)
 
                 # エントリーに登録したトークンを表示
-                service: str = f'{self.master.master.pyproject['project']['name']}-Service'
-                tokens: dict[SlackTokens, str] = get_slack_tokens(service=service)
+                tokens: dict[SlackTokens, str] = get_slack_tokens()
                 self.bot_token_entry.entry.delete(0, ctk.END)
                 self.bot_token_entry.entry.insert(0, tokens[SlackTokens.SLACK_BOT_TOKEN])
                 self.canvas_id_entry.entry.delete(0, ctk.END)
@@ -180,9 +182,8 @@ class RegisterTokensView(ctk.CTkFrame):
             self.canvas_id_entry.entry.delete(0, ctk.END)
 
             # 既にトークンが登録されている場合はエントリーに表示
-            service: str = f'{self.master.master.pyproject['project']['name']}-Service'
-            if is_registered_slack_tokens(service=service):
-                tokens: dict[SlackTokens, str] = get_slack_tokens(service=service)
+            if is_registered_slack_tokens():
+                tokens: dict[SlackTokens, str] = get_slack_tokens()
                 self.bot_token_entry.entry.insert(0, tokens[SlackTokens.SLACK_BOT_TOKEN])
                 self.canvas_id_entry.entry.insert(0, tokens[SlackTokens.SLACK_CANVAS_ID])
 
@@ -197,11 +198,10 @@ class RegisterTokensView(ctk.CTkFrame):
         bot_token: str = self.bot_token_entry.entry.get().strip()
         canvas_id: str = self.canvas_id_entry.entry.get().strip()
 
-        if bot_token and canvas_id and bot_token:
+        if bot_token != '' and canvas_id != '':
             # 既にトークンが登録されている場合は変更がある場合のみ有効化
-            service: str = f'{self.master.master.pyproject['project']['name']}-Service'
-            if is_registered_slack_tokens(service=service):
-                tokens: dict[SlackTokens, str] = get_slack_tokens(service=service)
+            if is_registered_slack_tokens():
+                tokens: dict[SlackTokens, str] = get_slack_tokens()
                 if bot_token != tokens[SlackTokens.SLACK_BOT_TOKEN] or canvas_id != tokens[SlackTokens.SLACK_CANVAS_ID]:
                     self.register_button.configure(state=ctk.NORMAL)
                 else:

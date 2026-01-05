@@ -1,8 +1,645 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
+import tkinter as tk
 import customtkinter as ctk
+from PIL import Image
+from ...utils import UserState, UserAction, DEFAULT_USER_STATE, USER_STATE_LABELS
+from ...utils.nfc import UID, NFC
+from ...utils.db import (
+    is_registered_user,
+    register_user,
+    update_user_state,
+    delete_user,
+    get_user_info,
+    get_users_by_state
+)
+from ..views import RegisterEntry, RegisterButton
 if TYPE_CHECKING:
     from ..views import MainView
+    from ..windows import RegisterUserDetailWindow, DeleteUserAlertWindow
+
+# 新規ユーザー追加ボタン
+class AddNewUserButton(ctk.CTkButton):
+    master: RegisterUserView
+    root_dir: str
+    width: int
+    height: int
+    def __init__(self, master: RegisterUserView, root_dir: str, width: int, height: int) -> None:
+        super(AddNewUserButton, self).__init__(
+            master=master,
+            width=width,
+            height=height,
+            text='',
+            image=ctk.CTkImage(
+                light_image=Image.open(f'{root_dir}/assets/icons/light/person_add.png'),
+                dark_image=Image.open(f'{root_dir}/assets/icons/dark/person_add.png'),
+                size=(height, height)
+            ),
+            command=self.switch_to_register_user_detail_window,
+            fg_color='transparent',
+            bg_color='transparent',
+            hover=True
+        )
+        self.root_dir = root_dir
+        self.width = width
+        self.height = height
+
+    # 新規ユーザー登録詳細ウィンドウへ切り替え
+    def switch_to_register_user_detail_window(self) -> None:
+        self.master.switch_to_register_user_detail_window()
+
+# ユーザー登録詳細ビューのコンポーネント
+class RegisterUserDetailView(ctk.CTkFrame):
+    master: RegisterUserDetailWindow
+    root_dir: str
+    width: int
+    height: int
+    nfc_uid_entry: RegisterEntry
+    user_name_entry: RegisterEntry
+    register_button: RegisterButton
+    nfc: NFC
+    id_entries_observer: str | None = None
+    def __init__(self, master: RegisterUserDetailWindow, root_dir: str, width: int, height: int) -> None:
+        super(RegisterUserDetailView, self).__init__(master=master, width=width, height=height)
+        self.root_dir = root_dir
+        self.width = width
+        self.height = height
+
+        # エントリーの設定
+        register_entry_width: int = width
+        register_entry_height: int = int(height * 0.4)
+
+        # NFC UIDエントリーの作成
+        self.nfc_uid_entry = RegisterEntry(
+            master=self,
+            width=register_entry_width,
+            height=register_entry_height,
+            text='NFCタグID',
+            description='NFCリーダーにタグをかざしてください',
+            show=None
+        )
+        self.nfc_uid_entry.place(relx=0.5, rely=0.05, anchor=ctk.N)
+
+        # NFC UIDエントリーを読み取り専用に設定
+        self.nfc_uid_entry.entry.configure(state=ctk.DISABLED)
+
+        # ユーザー名エントリーの作成
+        self.user_name_entry = RegisterEntry(
+            master=self,
+            width=register_entry_width,
+            height=register_entry_height,
+            text='ユーザー名',
+            description='',
+            show=None
+        )
+        self.user_name_entry.place(relx=0.5, rely=0.45, anchor=ctk.N)
+
+        # 登録ボタンの作成
+        self.register_button = RegisterButton(
+            master=self,
+            width=int(width * 0.2),
+            height=int(height * 0.1),
+            text='登録',
+            command=self.register_user
+        )
+        self.register_button.place(relx=0.95, rely=0.95, anchor=ctk.SE)
+
+        # 名前エントリーにフォーカスを設定
+        self.user_name_entry.entry.focus_set()
+
+        # NFCの初期化とタグ読み取り開始
+        self.nfc = NFC(command=self.callback_by_read_nfc_uid, only_once=False)
+        self.nfc.start()
+
+        # エントリーの監視を開始
+        self._observe_entries()
+
+    def destroy(self) -> None:
+        # エントリーの監視を停止
+        if self.id_entries_observer is not None:
+            self.after_cancel(self.id_entries_observer)
+            self.id_entries_observer = None
+
+        # 登録詳細ウィンドウを非表示
+        self.master.withdraw()
+
+        # NFCセッションの停止
+        self.nfc.stop()
+
+        # ユーザー登録詳細ビューの破棄
+        super(RegisterUserDetailView, self).destroy()
+
+    def register_user(self, event: tk.Event | None = None) -> None:
+        # エントリーの監視を停止
+        if self.id_entries_observer is not None:
+            self.after_cancel(self.id_entries_observer)
+            self.id_entries_observer = None
+
+        # ユーザー登録ボタンを無効化
+        self.register_button.configure(state=ctk.DISABLED)
+
+        # エントリーから値を取得
+        uid: UID = UID(self.nfc_uid_entry.entry.get().strip())
+        user_name: str = self.user_name_entry.entry.get().strip()
+
+        # ユーザー情報を登録に成功した場合
+        if register_user(root_dir=self.root_dir, id=uid.sha256(), name=user_name, state=DEFAULT_USER_STATE):
+            # エントリーを無効化
+            self.register_button.configure(state=ctk.DISABLED)
+            self.nfc_uid_entry.entry.configure(state=ctk.DISABLED)
+            self.user_name_entry.entry.configure(state=ctk.DISABLED)
+
+            # 登録成功メッセージを1秒間表示した後、ウィンドウを閉じる
+            text_color: str = self.user_name_entry.description.cget('text_color')
+            self.user_name_entry.description.configure(text='ユーザーが正常に登録されました', text_color='green')
+            def _close_window() -> None:
+                self.user_name_entry.description.configure(text='', text_color=text_color)
+
+                # ユーザーリストビューを更新
+                if isinstance(self.master.master.bodyview, RegisterUserView):
+                    self.master.master.bodyview.update_users_list()
+
+                self.master.destroy()
+            self.after(1000, _close_window)
+
+        # ユーザー情報の登録に失敗した場合
+        else:
+            # NFCタグIDをクリアして無効化
+            self.nfc_uid_entry.entry.configure(state=ctk.NORMAL)
+            self.nfc_uid_entry.entry.delete(0, ctk.END)
+            self.nfc_uid_entry.entry.configure(state=ctk.DISABLED)
+
+            # ユーザー名をクリア
+            self.user_name_entry.entry.configure(state=ctk.NORMAL)
+            self.user_name_entry.entry.delete(0, ctk.END)
+
+            # エントリー監視を再開
+            self._observe_entries()
+
+            # 登録失敗メッセージを1秒間表示
+            text_color: str = self.user_name_entry.description.cget('text_color')
+            self.user_name_entry.description.configure(text='ユーザーの登録に失敗しました', text_color='red')
+            def _clear_error_message() -> None:
+                self.user_name_entry.description.configure(text='', text_color=text_color)
+            self.after(1000, _clear_error_message)
+
+    # NFCタグIDを読み取った時に呼ばれるコールバック関数
+    def callback_by_read_nfc_uid(self) -> None:
+        uid: UID = self.nfc.response.uid
+
+        # NFCタグがすでに登録されている場合は警告メッセージを1秒間表示
+        if is_registered_user(self.root_dir, uid.sha256()):
+            text_color: str = self.nfc_uid_entry.description.cget('text_color')
+            self.nfc_uid_entry.description.configure(text='このNFCタグはすでに登録されています', text_color='red')
+            def _clear_warning_message() -> None:
+                self.nfc_uid_entry.description.configure(text='', text_color=text_color)
+            self.after(1000, _clear_warning_message)
+            return
+
+        # 成功メッセージを1秒間表示
+        text_color: str = self.nfc_uid_entry.description.cget('text_color')
+        self.nfc_uid_entry.description.configure(text='NFCタグが正常に読み取れました', text_color='green')
+        def _clear_success_message() -> None:
+            self.nfc_uid_entry.description.configure(text='', text_color=text_color)
+        self.after(1000, _clear_success_message)
+
+        # NFCタグIDエントリーにUIDを設定
+        self.nfc_uid_entry.entry.configure(state=ctk.NORMAL)
+        self.nfc_uid_entry.entry.delete(0, ctk.END)
+        self.nfc_uid_entry.entry.insert(0, uid)
+        self.nfc_uid_entry.entry.configure(state=ctk.DISABLED)
+
+    # それぞれのエントリーが空白でない場合に登録ボタンを有効化 (ループで監視)
+    def _observe_entries(self) -> None:
+        nfc_uid: str = self.nfc_uid_entry.entry.get().strip()
+        user_name: str = self.user_name_entry.entry.get().strip()
+
+        if nfc_uid != '' and user_name != '':
+            self.register_button.configure(state=ctk.NORMAL)
+        else:
+            self.register_button.configure(state=ctk.DISABLED)
+        self.id_entries_observer = self.after(100, self._observe_entries)
+
+# ユーザー削除アラートビューのコンポーネント
+class DeleteUserAlertView(ctk.CTkFrame):
+    master: DeleteUserAlertWindow
+    root_dir: str
+    width: int
+    height: int
+    deleted_user_name: str
+    deleted_user_hashed_uid: str
+    alert_message: str
+    alert_label: ctk.CTkLabel
+    confirm_button: ctk.CTkButton
+    cancel_button: ctk.CTkButton
+    id_status_message: str | None = None
+    def __init__(self, master: DeleteUserAlertWindow, root_dir: str, width: int, height: int, deleted_user_name: str, deleted_user_hashed_uid: str) -> None:
+        super(DeleteUserAlertView, self).__init__(
+            master=master,
+            width=width,
+            height=height,
+            # fg_color='transparent',
+            bg_color='transparent'
+        )
+        self.root_dir = root_dir
+        self.width = width
+        self.height = height
+        self.deleted_user_name = deleted_user_name
+        self.deleted_user_hashed_uid = deleted_user_hashed_uid
+
+        # アラートメッセージラベルの作成
+        label_font_size: int = int(min(width, height) * 0.075)
+        self.alert_message = f'ユーザー「{self.deleted_user_name}」を削除しますか？\n\n※ この操作は元に戻せません.'
+        self.alert_label = ctk.CTkLabel(
+            master=self,
+            text=self.alert_message,
+            font=ctk.CTkFont(size=label_font_size),
+            anchor=ctk.CENTER
+        )
+        self.alert_label.place(relx=0.5, rely=0.4, anchor=ctk.CENTER)
+
+        # ボタンのサイズ
+        button_width: int = int(width * 0.35)
+        button_height: int = int(height * 0.2)
+        button_font_size: int = int(min(button_width, button_height) * 0.5)
+
+        # 確認ボタンの作成
+        self.confirm_button = ctk.CTkButton(
+            master=self,
+            width=button_width,
+            height=button_height,
+            text='確認',
+            font=ctk.CTkFont(size=button_font_size),
+            command=self.confirm_delete_user,
+            fg_color=ctk.ThemeManager.theme['CTkButton']['fg_color'],
+            bg_color='transparent',
+            hover=True
+        )
+        self.confirm_button.place(relx=0.75, rely=0.8, anchor=ctk.CENTER)
+
+        # キャンセルボタンの作成
+        self.cancel_button = ctk.CTkButton(
+            master=self,
+            width=button_width,
+            height=button_height,
+            text='キャンセル',
+            font=ctk.CTkFont(size=button_font_size),
+            command=self.cancel_delete_user,
+            fg_color='transparent',
+            bg_color='transparent',
+            hover=True
+        )
+        self.cancel_button.place(relx=0.25, rely=0.8, anchor=ctk.CENTER)
+
+        # イベントの設定
+        self.master.protocol('WM_DELETE_WINDOW', self.master.destroy)
+
+    # ユーザー削除を確認
+    def confirm_delete_user(self) -> None:
+        # ユーザー削除に成功した場合
+        if delete_user(self.root_dir, self.deleted_user_hashed_uid):
+            # 削除成功メッセージを1秒間表示した後、ウィンドウを閉じる
+            text_color: str = self.alert_label.cget('text_color')
+            self.alert_label.configure(text='ユーザーが正常に削除されました', text_color='green')
+            def _close_window() -> None:
+                self.alert_label.configure(text=self.alert_message, text_color=text_color)
+
+                # ユーザー削除アラートビューを終了
+                self.master.destroy()
+            self.id_status_message = self.after(1000, _close_window)
+
+        # ユーザー削除に失敗した場合
+        else:
+            # 確認・キャンセルボタンを無効化
+            self.confirm_button.configure(state=ctk.DISABLED)
+            self.cancel_button.configure(state=ctk.DISABLED)
+
+            # 削除失敗メッセージを1秒間表示 (1秒後にアラートビューを閉じて, キャンセルと同じ動作を行う)
+            text_color: str = self.alert_label.cget('text_color')
+            self.alert_label.configure(text='ユーザーの削除に失敗しました', text_color='red')
+            def _clear_error_message() -> None:
+                self.alert_label.configure(text=self.alert_message, text_color=text_color)
+
+                # ユーザー削除アラートビューを終了 (キャンセルと同じ動作)
+                self.cancel_delete_user()
+
+            self.id_status_message = self.after(1000, _clear_error_message)
+
+    # ユーザーアラートビューを破棄
+    def destroy(self) -> None:
+        # ステータスメッセージのafterイベントをキャンセル
+        if self.id_status_message is not None:
+            self.after_cancel(self.id_status_message)
+            self.id_status_message = None
+
+        # ユーザー削除アラートビューの破棄
+        super(DeleteUserAlertView, self).destroy()
+
+    # ユーザー削除をキャンセル
+    def cancel_delete_user(self) -> None:
+        self.master.destroy()
+
+# ユーザー情報フレーム (編集, 削除ボタンなどを含む)
+class UserInfoFrame(ctk.CTkFrame):
+    master: UsersList
+    _register_user_view: RegisterUserView   # 親ビューの参照
+    root_dir: str
+    width: int
+    height: int
+    name: str
+    hashed_uid: str                         # NFCタグIDのSHA256ハッシュ値
+    name_label: ctk.CTkLabel                # ユーザー名ラベル
+    toggle_state_button: ctk.CTkButton      # ユーザー状態切替ボタン
+    delete_button: ctk.CTkButton            # ユーザー削除ボタン
+    def __init__(self, master: UsersList, root_dir: str, width: int, height: int, name: str, hashed_uid: str) -> None:
+        super(UserInfoFrame, self).__init__(
+            master=master,
+            width=width,
+            height=height,
+            # fg_color='transparent',
+            bg_color='transparent',
+            corner_radius=int(min(width, height) * 0.1)
+        )
+        self._register_user_view = master._master.master # RegisterUserViewへの参照 (UsersList -> UsersTabView -> RegisterUserView)
+        self.root_dir = root_dir
+        self.width = width
+        self.height = height
+        self.name = name
+        self.hashed_uid = hashed_uid
+
+        # ユーザー名ラベルの作成
+        label_width: int = int(width * 0.6)
+        label_height: int = self.height
+        label_font_size: int = int(min(width, height) * 0.3)
+        self.name_label = ctk.CTkLabel(
+            master=self,
+            text=self.name,
+            width=label_width,
+            height=label_height,
+            font=ctk.CTkFont(size=label_font_size),
+            anchor=ctk.W
+        )
+        self.name_label.place(relx=0.05, rely=0.5, anchor=ctk.W)
+
+        # ボタンアイコンのサイズ
+        button_width: int = int(min(width, height) * 0.5)
+        button_height: int = button_width
+
+        # ユーザー状態切替ボタンの作成
+        self.toggle_state_button = ctk.CTkButton(
+            master=self,
+            width=button_width,
+            height=button_height,
+            text='',
+            image=ctk.CTkImage(
+                light_image=Image.open(f'{root_dir}/assets/icons/light/check_in_out.png'),
+                dark_image=Image.open(f'{root_dir}/assets/icons/dark/check_in_out.png'),
+                size=(button_height, button_height)
+            ),
+            command=self.toggle_user_state,
+            fg_color='transparent',
+            bg_color='transparent',
+            hover=True
+        )
+        self.toggle_state_button.place(relx=0.75, rely=0.5, anchor=ctk.CENTER)
+
+        # ユーザー削除ボタンの作成
+        self.delete_button = ctk.CTkButton(
+            master=self,
+            width=button_width,
+            height=button_height,
+            text='',
+            image=ctk.CTkImage(
+                light_image=Image.open(f'{root_dir}/assets/icons/light/person_remove.png'),
+                dark_image=Image.open(f'{root_dir}/assets/icons/dark/person_remove.png'),
+                size=(button_height, button_height)
+            ),
+            command=self.delete_user,
+            fg_color='transparent',
+            bg_color='transparent',
+            hover=True
+        )
+        self.delete_button.place(relx=0.9, rely=0.5, anchor=ctk.CENTER)
+
+    # ユーザー状態を切り替える
+    def toggle_user_state(self) -> None:
+        current_state: UserState = UserState(int(get_user_info(self.root_dir, self.hashed_uid)['state']))
+        if current_state == UserState.IN:
+            new_state: UserState = UserState.OUT
+        elif current_state == UserState.OUT:
+            new_state: UserState = UserState.IN
+        if update_user_state(self.root_dir, self.hashed_uid, new_state):
+            # ユーザー一覧を更新
+            self._register_user_view.update_users_list()
+
+    def delete_user(self) -> None:
+        from ..windows import DeleteUserAlertWindow
+        window_width: int = int(min(self._register_user_view.width, self._register_user_view.height) * 0.75)
+        window_height: int = int(window_width*2 / 3) # 横長ウィンドウ (幅:高さ = 3:2)
+        DeleteUserAlertWindow(
+            master=self._register_user_view.master,
+            root_dir=self.root_dir,
+            width=window_width,
+            height=window_height,
+            deleted_user_name=self.name,
+            deleted_user_hashed_uid=self.hashed_uid,
+            title='Delete User Confirmation'
+        )
+
+# ユーザー一覧スクロールフレーム
+class UsersList(ctk.CTkScrollableFrame):
+    master: ctk.CTkCanvas                                           # CT_kScrollableFrameのmasterはCTkCanvas型になるため
+    _master: UsersTabView                                           # 親ビューの参照
+    root_dir: str
+    width: int
+    height: int
+    user_state: UserState                                           # ユーザー状態フィルター
+    user_info_frames: list[UserInfoFrame] = list[UserInfoFrame]()   # ユーザー情報フレームのリスト (状態の更新順)
+    def __init__(self, master: UsersTabView, root_dir: str, width: int, height: int, user_state: UserState = DEFAULT_USER_STATE) -> None:
+        super(UsersList, self).__init__(
+            master=master,
+            width=width,
+            height=height,
+            label_font=ctk.CTkFont(size=int(min(width, height) * 0.1)),
+            corner_radius=int(min(width, height) * 0.02),
+            fg_color='transparent',
+            bg_color='transparent'
+        )
+        self._master = master
+        self.root_dir = root_dir
+        self.width = width
+        self.height = height
+        self.user_state = user_state
+
+        # ユーザー一覧を初期化
+        self.create_users_list()
+
+    # ユーザー一覧を作成
+    def create_users_list(self) -> None:
+        users: list[dict[str, str]] = get_users_by_state(self.root_dir, self.user_state)
+        frame_width: int = int(self.width * 0.9)
+        frame_height: int = int(self.height * 0.2)
+        for user in users:
+            user_info_frame = UserInfoFrame(
+                master=self,
+                root_dir=self.root_dir,
+                width=frame_width,
+                height=frame_height,
+                name=user['name'],
+                hashed_uid=user['id']
+            )
+            user_info_frame.pack(pady=int(self.height * 0.02))
+            self.user_info_frames.append(user_info_frame)
+
+        # レイアウトを更新
+        self.update_idletasks()
+
+    # ユーザー一覧をクリア
+    def clear_users_list(self) -> None:
+        for user_info_frame in self.user_info_frames:
+            user_info_frame.destroy()
+        self.user_info_frames = list[UserInfoFrame]()
+
+    # ユーザー一覧を更新
+    def update_users_list(self, user_state: UserState | None = None) -> None:
+        # ユーザー状態フィルターを更新 (Noneの場合は変更しない. ユーザーの状態が変わった場合などに使用)
+        if user_state is not None:
+            self.user_state = user_state
+
+        # 古いユーザー一覧をクリア
+        self.clear_users_list()
+
+        # ここにユーザー一覧を再取得して表示するコードを追加
+        self.create_users_list()
+
+# ユーザータブボタンのコンポーネント
+class TabButton(ctk.CTkButton):
+    master: TabFrame
+    root_dir: str
+    width: int
+    height: int
+    user_state: UserState
+    def __init__(self, master: UsersTabView, root_dir: str, width: int, height: int, text: str = '', user_state: UserState = UserState.IN) -> None:
+        super(TabButton, self).__init__(
+            master=master,
+            width=width,
+            height=height,
+            text=text,
+            font=ctk.CTkFont(size=int(min(width, height) * 0.5)),
+            command=self._command,
+            fg_color=ctk.ThemeManager.theme['CTkButton']['fg_color'] if user_state == DEFAULT_USER_STATE else 'transparent',
+            bg_color='transparent',
+            hover=True
+        )
+        self.root_dir = root_dir
+        self.width = width
+        self.height = height
+        self.user_state = user_state
+
+    # タブがクリックされたときの動作
+    def _command(self) -> None:
+        # ユーザー一覧を更新 (RegisterUserView経由)
+        self.master.master.update_users_list(self.user_state)
+
+# タブフレームのコンポーネント
+class TabFrame(ctk.CTkFrame):
+    master: UsersTabView
+    root_dir: str
+    width: int
+    height: int
+    height: int
+    tabs: dict[UserState, TabButton] = dict[UserState, TabButton]() # タブボタンの辞書
+    tab_labels: dict[UserState, str] = {
+        UserState.IN: f'{USER_STATE_LABELS[UserState.IN]}者',
+        UserState.OUT: f'{USER_STATE_LABELS[UserState.OUT]}者'
+    }
+    def __init__(self, master: UsersTabView, root_dir: str, width: int, height: int) -> None:
+        super(TabFrame, self).__init__(
+            master=master,
+            width=width,
+            height=height,
+            corner_radius=int(min(width, height) * 0.1),
+            fg_color='transparent',
+            bg_color='transparent'
+        )
+        self.root_dir = root_dir
+        self.width = width
+        self.height = height
+
+        # タブボタンの作成
+        padding: int = int(width * 0.075) # タブボタン間の余白
+        button_width: int = int((width - padding * (len(self.tab_labels) + 1)) / len(self.tab_labels))
+        button_height: int = int(height * 0.9)
+        for index, user_state in enumerate(sorted(self.tab_labels.keys(), key=lambda _user_state: _user_state.value), start=0):
+            self.tabs[user_state] = TabButton(
+                master=self,
+                root_dir=root_dir,
+                width=button_width,
+                height=button_height,
+                text=self.tab_labels[user_state],
+                user_state=user_state
+            )
+            self.tabs[user_state].place(relx=(index * button_width + (index + 1) * padding) / width, rely=0.05, anchor=ctk.NW)
+
+    # ユーザー一覧を更新
+    def update_users_list(self, user_state: UserState | None = None) -> None:
+        # タブの状態を更新
+        for _user_state, tab in self.tabs.items():
+            # 更新対象のタブの場合は無効化
+            if _user_state == user_state or (_user_state == self.master.users_list.user_state and user_state is None):
+                tab.configure(state=ctk.DISABLED)
+                tab.configure(fg_color=ctk.ThemeManager.theme['CTkButton']['fg_color'])
+            else:
+                tab.configure(state=ctk.NORMAL)
+                tab.configure(fg_color='transparent')
+
+# ユーザータブビューのコンポーネント (在室者・不在者タブ)
+class UsersTabView(ctk.CTkFrame):
+    master: RegisterUserView
+    root_dir: str
+    width: int
+    tab_frame: TabFrame     # タブフレーム (在室者・不在者タブ)
+    users_list: UsersList   # ユーザー一覧 (現在のタブに対応)
+    def __init__(self, master: RegisterUserView, root_dir: str, width: int, height: int) -> None:
+        super(UsersTabView, self).__init__(
+            master=master,
+            width=width,
+            height=height,
+            # fg_color='transparent',
+            bg_color='transparent'
+        )
+        self.root_dir = root_dir
+        self.width = width
+        self.height = height
+
+        # タブフレームの作成
+        tab_frame_width: int = int(width * 0.9)
+        tab_frame_height: int = int(height * 0.1)
+        self.tab_frame = TabFrame(
+            master=self,
+            root_dir=root_dir,
+            width=tab_frame_width,
+            height=tab_frame_height
+        )
+        self.tab_frame.place(relx=0.5, rely=0.025, anchor=ctk.N)
+
+        # ユーザー一覧の作成 (初期状態は在室者タブ)
+        self.users_list = UsersList(
+            master=self,
+            root_dir=root_dir,
+            width=int(width * 0.9),
+            height=int(height * 0.8),
+            user_state=UserState.IN
+        )
+        self.users_list.place(relx=0.5, rely=0.55, anchor=ctk.CENTER)
+
+    # ユーザー一覧を更新
+    def update_users_list(self, user_state: UserState | None = None) -> None:
+        # タブフレームの状態を更新
+        self.tab_frame.update_users_list(user_state)
+
+        # ユーザー一覧を更新
+        self.users_list.update_users_list(user_state)
 
 # ユーザー登録ビューのコンポーネント
 class RegisterUserView(ctk.CTkFrame):
@@ -10,18 +647,51 @@ class RegisterUserView(ctk.CTkFrame):
     root_dir: str
     width: int
     height: int
+    add_new_user_button: AddNewUserButton   # 新規ユーザー追加ボタン
+    users_tab_view: UsersTabView            # ユーザータブビュー
     def __init__(self, master: MainView, root_dir: str, width: int, height: int) -> None:
         super(RegisterUserView, self).__init__(master=master, width=width, height=height)
         self.root_dir = root_dir
         self.width = width
         self.height = height
 
-        ctk.CTkLabel(
+        # 新規ユーザー追加ボタンの作成
+        button_width: int = int(height * 0.075)
+        button_height: int = int(height * 0.075)
+        self.add_new_user_button = AddNewUserButton(
             master=self,
-            text='ユーザー登録ビュー',
-            font=ctk.CTkFont(size=20)
-        ).place(
-            x=width / 2,
-            y=height / 2,
-            anchor='center'
+            root_dir=root_dir,
+            width=button_width,
+            height=button_height
         )
+        self.add_new_user_button.place(relx=0.95, rely=0.05, anchor=ctk.NE)
+
+        # ユーザータブビューの作成
+        self.users_tab_view = UsersTabView(
+            master=self,
+            root_dir=root_dir,
+            width=int(width * 0.8),
+            height=int(height * 0.8)
+        )
+        self.users_tab_view.place(relx=0.5, rely=0.55, anchor=ctk.CENTER)
+
+    # 新規ユーザー登録詳細ウィンドウへ切り替え
+    def switch_to_register_user_detail_window(self) -> None:
+        # 新規ユーザー登録詳細ウィンドウの表示　 (メインウィンドウは非表示)
+        from ..windows import RegisterUserDetailWindow
+        RegisterUserDetailWindow(
+            master=self.master,
+            root_dir=self.root_dir,
+            width=self.width,
+            height=self.height
+        )
+
+    # ユーザー一覧を更新
+    def update_users_list(self, user_state: UserState | None = None) -> None:
+        # ユーザータブビューのユーザー一覧を更新
+        self.users_tab_view.update_users_list(user_state)
+
+    # ユーザー登録ビューを更新
+    def update_idletasks(self):
+        self.update_users_list()
+        super(RegisterUserView, self).update_idletasks()

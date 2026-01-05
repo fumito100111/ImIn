@@ -5,6 +5,7 @@ import customtkinter as ctk
 from .components.windows import SetupWindow
 from .components.views import MainView
 from .utils.slack import is_registered_slack_tokens
+from .utils.db import initialize_db
 
 WIDTH_RATIO: int = 4                # アプリケーションウィンドウの幅の比率
 HEIGHT_RATIO: int = 3               # アプリケーションウィンドウの高さの比率
@@ -15,6 +16,7 @@ class App(ctk.CTk):
     width: int
     height: int
     pyproject: dict[str, Any]
+    view: MainView
     def __init__(self, root_dir: str) -> None:
         super(App, self).__init__()
         # アプリケーションウィンドウの非表示
@@ -37,13 +39,18 @@ class App(ctk.CTk):
         self.resizable(False, False)
 
         # メインビューの作成
-        MainView(self).pack(fill='both', expand=True)
+        self.view = MainView(self)
+        self.view.pack(fill='both', expand=True)
 
         # イベントの設定
         self.protocol('WM_DELETE_WINDOW', self.destroy)
 
         # 初回起動時のSlackトークンの確認
-        if not is_registered_slack_tokens(f'{self.pyproject['project']['name']}-Service'):
+        if not is_registered_slack_tokens():
+            # データベースの初期化
+            initialize_db(self.root_dir)
+
+            # セットアップウィンドウの表示
             SetupWindow(self)
 
         # Slackトークンが登録されている場合
