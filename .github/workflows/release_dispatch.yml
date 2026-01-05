@@ -1,4 +1,4 @@
-name: アプリケーションのリリース
+name: アプリケーションのビルド & リリース
 
 on:
   workflow_dispatch:
@@ -97,6 +97,10 @@ jobs:
           if [[ "${{ matrix.os_name }}" == "linux" ]]; then
             sudo apt-get update
             sudo apt-get install -y libpcsclite-dev swig
+
+          elif [[ "${{ matrix.os_name }}" == "macos" ]]; then
+            brew install create-dmg
+
           fi
 
       - name: Pythonのセットアップ (Python 3.13.0)

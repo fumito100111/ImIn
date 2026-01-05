@@ -42,8 +42,17 @@ if [[ "$OS" == "macos" ]]; then
 
     # DMGファイルの作成
     DMG_PATH="${DIST_DIR}/${APP_NAME}_${OS}_${ARCH}.dmg"
-    ln -s /Applications "${OUTPUT_DIR}/Applications"
-    hdiutil create -volname "${APP_NAME}" -srcfolder "${OUTPUT_DIR}" -ov -format UDZO "${DMG_PATH}"
+    create-dmg --volname "${APP_NAME} Installer" \
+               --volicon "${OUTPUT_DIR}/${APP_NAME}.app/Contents/Resources/icon.icns" \
+               --background "${CWD}/assets/dmg/background.png" \
+               --window-size 1024 720 \
+               --icon-size 120 \
+               --icon "${APP_NAME}.app" 324 360 \
+               --app-drop-link 700 360 \
+               --hide-extension "${APP_NAME}.app" \
+               --no-internet-enable \
+               "${DMG_PATH}" \
+               "${OUTPUT_DIR}" \
 
 elif [[ "$OS" == "linux" ]]; then
     # TODO: Linux用のビルド
