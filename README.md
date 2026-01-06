@@ -1,6 +1,11 @@
 # ImIn
 
+<div align="center">
+  <img src="./docs/assets/README/icon.png" width="200">
+</div>
+
 ## 概要
+
 `ImIn`は, 在室状況をSlack上で共有するためのデスクトップアプリケーションです.
 ユーザーはアプリケーションを通じて, NFCタグを用いて自身の在室状況を簡単に更新でき, その情報は指定したSlackキャンバスにリアルタイムで反映されます.
 これにより, チームメンバーは互いの在室状況を即座に把握でき, 効率的なコミュニケーションが可能になります.
@@ -10,9 +15,12 @@
 ## 使い方
 
 ## ライセンス
+
 このアプリケーションはMITライセンスの下で提供されています. 詳細は[LICENSE](LICENSE)ファイルを参照してください.
 
 ## OSSライセンス
+
+本アプリケーションは以下のオープンソースソフトウェアを利用しています:
 - [Bolt for Python](https://github.com/slackapi/bolt-python) [[MIT](./app/assets/licenses/LICENSE_Bolt-for-Python)]
 - [create-dmg](https://github.com/create-dmg/create-dmg) [[MIT](./app/assets/licenses/LICENSE_create--dmg)]
 - [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter) [[MIT](./app/assets/licenses/LICENSE_CustomTkinter)]
