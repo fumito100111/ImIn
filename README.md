@@ -14,6 +14,138 @@
 
 ## 使い方
 
+### Slack連携 (初回起動時)
+
+初回起動時にSlackとの連携設定を行います.
+初回起動時には, 以下のようなSlack連携設定画面が表示されます.
+
+<div align="center">
+  <img src="./docs/assets/README/Setup/1.png" width="450">
+</div>
+
+`Slack Bot トークン`の欄には, SlackアプリのOAuthトークンを入力します.
+`Canvas ID`の欄には, 在室状況を表示するSlackキャンバスのIDを入力します.
+`Slack Bot トークン`と`Canvas ID`の取得方法については, [こちら](./docs/SLACK_SETUP.md)をご覧ください.
+
+<div align="center">
+  <img src="./docs/assets/README/Setup/2.png" width="450">
+</div>
+
+最後に, `登録`ボタンを押すとSlack連携の設定が完了します.
+
+### ユーザー登録
+#### ユーザー追加
+
+ユーザーの新規登録はNFCタグを用いて行います.
+そのため, NFCリーダーが接続されている必要があります.
+
+はじめに, 左のサイドバーから`ユーザー登録`を選択します.
+次に, 右上のユーザー追加アイコンをクリックします.
+
+<div align="center">
+  <img src="./docs/assets/README/User-Registration/Add/1.png" width="600">
+</div>
+
+すると, 以下のようなユーザー追加画面が表示されます.
+> [!IMPORTANT]
+> このとき, NFCリーダーが正しく接続されていない場合は接続待機画面が表示されます.
+
+<div align="center">
+  <img src="./docs/assets/README/User-Registration/Add/2.png" width="450">
+</div>
+
+ユーザー追加画面が表示されたら, 登録するNFCタグをNFCリーダーにかざして, ユーザー名を入力します.
+
+<div align="center">
+  <img src="./docs/assets/README/User-Registration/Add/3.png" width="450">
+</div>
+
+最後に, `登録`ボタンを押すとユーザーの新規登録が完了します.
+正しく登録が完了すると, 以下のように`ユーザー登録`画面の`在室者`リストに新規ユーザーが追加されます.
+
+> [!TIP]
+> このとき, すでに登録済みのNFCタグを使用した場合はエラーメッセージが表示されます.
+
+<div align="center">
+  <img src="./docs/assets/README/User-Registration/Add/4.png" width="600">
+</div>
+
+#### ユーザー削除
+
+はじめに, 左のサイドバーから`ユーザー登録`を選択します.
+次に, `在室者` or `不在者`リストから削除したいユーザーを探して, 右側のユーザー削除アイコンをクリックします.
+
+<div align="center">
+  <img src="./docs/assets/README/User-Registration/Delete/1.png" width="600">
+</div>
+
+すると, 以下のようなユーザー削除の確認画面が表示されます.
+`確認`ボタンを押すとユーザーの削除が完了します.
+> [!IMPORTANT]
+> この操作は取り消せないので, 削除するユーザーの情報をよく確認してください.
+
+<div align="center">
+  <img src="./docs/assets/README/User-Registration/Delete/2.png" width="450">
+</div>
+
+### 入退室記録
+
+あらかじめNFCタグを用いてユーザー登録を行う必要があります.
+在室状況はSlackキャンバスにリアルタイムで反映されます.
+
+> [!TIP]
+> 在室状況がSlackキャンバスに反映されるまでには数秒かかる場合があります.
+
+#### NFCタグを用いた入退室
+
+はじめに, 左のサイドバーから`入退室記録`を選択します.
+`ユーザー登録`や`Slack連携`などの設定が必要な場合以外は, 以下のような`入退室記録`画面が表示されていることが想定されます.
+
+> [!IMPORTANT]
+> このとき, NFCリーダーが正しく接続されていない場合は接続待機画面が表示されます.
+
+> [!TIP]
+> `入退室記録`画面は全画面表示となっています. ウィンドウを閉じると, アプリケーションのメイン画面に戻ります.
+
+<div align="center">
+  <img src="./docs/assets/README/Check-In-Out/NFC/1.png" width="800">
+</div>
+
+実際にNFCタグをNFCリーダーにかざすと, 以下のように在室状況が更新されます.
+
+<div align="center">
+  <img src="./docs/assets/README/Check-In-Out/NFC/2.gif" width="800">
+</div>
+
+> [!TIP]
+> NFCタグをかざした際に, 登録されていないNFCタグの場合は`登録されていません`と表示されます.
+
+#### 手動による入退室
+
+NFCタグを用いずに手動で入退室の記録を行うことも可能です.
+はじめに, 左のサイドバーから`ユーザー登録`を選択します.
+次に, `在室者` or `不在者`リストから入退室を記録したいユーザーを探して, 右側のIn/Outアイコンをクリックします.
+すると, 以下のようにユーザーの在室状況が更新されます.
+
+<div align="center">
+  <img src="./docs/assets/README/Check-In-Out/Manual/1.gif" width="600">
+</div>
+
+### Slack連携 (設定変更時)
+
+はじめに, 左のサイドバーから`Slack連携`を選択します.
+次に, `Slack Bot トークン`と`Canvas ID`の欄に新しい情報を入力します.
+`Slack Bot トークン`と`Canvas ID`の取得方法については, Slack連携 (初回起動時)と同様に[こちら](./docs/SLACK_SETUP.md)をご覧ください.
+
+<div align="center">
+  <img src="./docs/assets/README/Slack-Integration/1.png" width="600">
+</div>
+
+最後に, `登録`ボタンを押すとSlack連携の設定変更が完了します.
+
+> [!TIP]
+> 新しい登録に成功した場合, `トークンが正常に登録されました`というメッセージが表示されます.
+
 ## ライセンス
 
 このアプリケーションはMITライセンスの下で提供されています. 詳細は[LICENSE](LICENSE)ファイルを参照してください.
