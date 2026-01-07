@@ -116,7 +116,7 @@ jobs:
 
       - name: アプリケーションのビルド
         run: |
-          ./build/build.sh ${{ matrix.os_name }} ${{ matrix.arch }}
+          ./build/build.sh ${{ matrix.os_name }} ${{ matrix.arch }} "v${{ needs.update_version.outputs.new_version }}"
 
       - name: ビルド成果物の一時保存
         uses: actions/upload-artifact@v4
