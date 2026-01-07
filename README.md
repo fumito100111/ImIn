@@ -217,3 +217,6 @@ NFCタグを用いずに手動で入退室の記録を行うことも可能で�
 - [Python Slack SDK](https://github.com/slackapi/python-slack-sdk) [[MIT](./app/assets/licenses/LICENSE_Python-Slack-SDK)]
 
 ## お問い合わせ先
+
+- **開発者**: [fumito100111](https://github.com/fumito100111)
+- **Email**: [imin.app.developer@gmail.com](mailto:imin.app.developer@gmail.com)
