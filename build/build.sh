@@ -42,7 +42,7 @@ if [[ "$OS" == "macos" ]]; then
     rm -rf "${OUTPUT_DIR}/main.dist/"
 
     # DMGファイルの作成
-    DMG_PATH="${DIST_DIR}/${APP_NAME}_${VERSION_TAG}_${OS}_${ARCH}_installer.dmg"
+    DMG_PATH="${DIST_DIR}/${APP_NAME}_${VERSION_TAG}_${OS}_${ARCH}_Installer.dmg"
     create-dmg --volname "${APP_NAME} Installer" \
                --volicon "${OUTPUT_DIR}/${APP_NAME}.app/Contents/Resources/icon.icns" \
                --background "${CWD}/assets/dmg/background.png" \
