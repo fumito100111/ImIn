@@ -2,6 +2,7 @@
 
 OS="$1"
 ARCH="$2"
+VERSION_TAG="$3"
 APP_NAME="ImIn"
 CWD="$(cd "$(dirname "$0")" && pwd)"
 DIST_DIR="$(dirname "$CWD")/download_assets_dist"
@@ -41,7 +42,7 @@ if [[ "$OS" == "macos" ]]; then
     rm -rf "${OUTPUT_DIR}/main.dist/"
 
     # DMGファイルの作成
-    DMG_PATH="${DIST_DIR}/${APP_NAME}_${OS}_${ARCH}.dmg"
+    DMG_PATH="${DIST_DIR}/${APP_NAME}_${VERSION_TAG}_${OS}_${ARCH}_installer.dmg"
     create-dmg --volname "${APP_NAME} Installer" \
                --volicon "${OUTPUT_DIR}/${APP_NAME}.app/Contents/Resources/icon.icns" \
                --background "${CWD}/assets/dmg/background.png" \
