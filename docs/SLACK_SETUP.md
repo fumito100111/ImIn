@@ -1,4 +1,10 @@
-# Slackの設定方法
+# Slackの設定方法 <!-- omit in toc -->
+
+## 目次 <!-- omit in toc -->
+- [Slack Botの作成 \& トークン取得](#slack-botの作成--トークン取得)
+- [Slack Botの招待](#slack-botの招待)
+- [出席状況を共有するCanvasの作成 \& URL取得](#出席状況を共有するcanvasの作成--url取得)
+- [ImInとSlackの連携設定](#iminとslackの連携設定)
 
 ## Slack Botの作成 & トークン取得
 
@@ -100,8 +106,31 @@ Slackアプリを開き, Slack Botをインストールしたワークスペー�
   <img src="./assets/SLACK_SETUP/Slack-Canvas-Creation/3.png" width="600">
 </div>
 
-4. 上部の`作成したCanvas名`のタブを右クリックし, `canvasへのリンクをコピーする`を選択します. これでCanvasのURLがクリップボードにコピーされます. このURLを後で使用しますので, 記録しておいてください. (URL形式の例: `https://xxxxxxxxxxx-xxxxxxxxxx.slack.com/docs/xxxxxxxxxxx/xxxxxxxxxxx`)
+4. 上部の`作成したCanvas名`のタブを右クリックし, `canvasへのリンクをコピーする`を選択します.
+   これでCanvasのURLがクリップボードにコピーされます.
+   このURLを後で使用しますので, 記録しておいてください. (URL形式の例: `https://xxxxxxxxxxx-xxxxxxxxxx.slack.com/docs/xxxxxxxxxxx/xxxxxxxxxxx`)
 
 <div align="center">
   <img src="./assets/SLACK_SETUP/Slack-Canvas-Creation/4.png" width="600">
+</div>
+
+## ImInとSlackの連携設定
+
+1. ImInアプリを開き, 左のサイドバーから`Slack設定`を選択します. (初回起動時は自動的に表示されます.)
+
+> [!NOTE]
+> 以下は初回起動時のセットアップの画面です.
+> また, ImInのバージョンによっては画面のデザインが異なる場合がありますが, 基本的な操作手順は同じです.
+
+<div align="center">
+  <img src="./assets/SLACK_SETUP/Slack-Integration/1.png" width="600">
+</div>
+
+2. [Slack Botの作成 & トークン取得](#slack-botの作成--トークン取得)で取得した`Bot User OAuth Token`を`Slack Botトークン`欄に入力します.
+   また, [出席状況を共有するCanvasの作成 & URL取得](#出席状況を共有するcanvasの作成--url取得)で取得した`CanvasのURL`を`Canvas ID`欄に入力します.
+   <br>
+   `登録`ボタンをクリックすると, トークンとCanvas IDが有効であるか検証され, 成功すると設定が保存されます. (成功した場合, `トークンが正常に登録されました.`と表示されます.)
+
+<div align="center">
+  <img src="./assets/SLACK_SETUP/Slack-Integration/2.png" width="600">
 </div>
