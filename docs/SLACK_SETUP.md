@@ -65,3 +65,12 @@
 <div align="center">
   <img src="./assets/SLACK_SETUP/Slack-Bot-Creation/7.png" width="600">
 </div>
+
+## Slack Botの招待
+1. Slackアプリを開き, Slack Botをインストールしたワークスペースの任意のチャンネルに移動します.
+メッセージに以下のコマンドを送信してBotを招待します:
+   `/invite @YourAppName` (例: `/invite @ImInbot`)
+
+<div align="center">
+  <img src="./assets/SLACK_SETUP/Slack-Bot-Invitation/1.png" width="600">
+</div>
