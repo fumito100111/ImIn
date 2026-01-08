@@ -67,10 +67,41 @@
 </div>
 
 ## Slack Botの招待
-1. Slackアプリを開き, Slack Botをインストールしたワークスペースの任意のチャンネルに移動します.
+
+Slackアプリを開き, Slack Botをインストールしたワークスペースの任意のチャンネルに移動します.
 メッセージに以下のコマンドを送信してBotを招待します:
    `/invite @YourAppName` (例: `/invite @ImInbot`)
 
 <div align="center">
   <img src="./assets/SLACK_SETUP/Slack-Bot-Invitation/1.png" width="600">
+</div>
+
+## 出席状況を共有するCanvasの作成 & URL取得
+
+1. Slackアプリで, 任意のチャンネルの上部の`canvasを追加する`ボタンをクリックします.
+
+<div align="center">
+  <img src="./assets/SLACK_SETUP/Slack-Canvas-Creation/1.png" width="600">
+</div>
+
+2. 作成したCanvasのタブを右クリックし, 新しいCanvasに名前を付けて作成します. (例: `出席状況`)
+
+<div align="center">
+  <img src="./assets/SLACK_SETUP/Slack-Canvas-Creation/2-1.png" width="600">
+</div>
+
+<div align="center">
+  <img src="./assets/SLACK_SETUP/Slack-Canvas-Creation/2-2.png" width="600">
+</div>
+
+3. Canvasのタイトルをお好みの名前に変更します. (例: `出席状況`, なくても可. また, 後から変更可能です.)
+
+<div align="center">
+  <img src="./assets/SLACK_SETUP/Slack-Canvas-Creation/3.png" width="600">
+</div>
+
+4. 上部の`作成したCanvas名`のタブを右クリックし, `canvasへのリンクをコピーする`を選択します. これでCanvasのURLがクリップボードにコピーされます. このURLを後で使用しますので, 記録しておいてください. (URL形式の例: `https://xxxxxxxxxxx-xxxxxxxxxx.slack.com/docs/xxxxxxxxxxx/xxxxxxxxxxx`)
+
+<div align="center">
+  <img src="./assets/SLACK_SETUP/Slack-Canvas-Creation/4.png" width="600">
 </div>
