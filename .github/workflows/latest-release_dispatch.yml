@@ -1,0 +1,58 @@
+name: 正式リリース
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: '正式リリースのタグ名 (例: v0.0.0, 空欄の場合は最新リリース)'
+        required: false
+        type: string
+
+jobs:
+  release:
+    name: 正式リリースの作成
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    timeout-minutes: 1
+    steps:
+      - name: チェックアウト
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 入力タグの確認
+        id: check_tag
+        run: |
+          if [ -z "${{ github.event.inputs.release_tag }}" ]; then
+            release_tag=$(gh release list --limit 1 | awk '{print $1}')
+
+          elif gh api "repos/:owner/:repo/git/refs/tags/${{ github.event.inputs.release_tag }}" >/dev/null 2>&1; then
+            release_tag="${{ github.event.inputs.release_tag }}"
+
+          else
+            echo "Error: タグ '${{ github.event.inputs.release_tag }}' は存在しません。"
+            exit 1
+
+          fi
+          echo "release_tag=$release_tag" >> $GITHUB_OUTPUT
+
+      - name: README.mdの更新
+        run: |
+          release_tag="${{ steps.check_tag.outputs.release_tag }}"
+          sed -i "s;v[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*;${release_tag};g" ./README.md
+
+          if ! git diff --exit-code ./README.md > /dev/null; then
+            git config --global user.name "github-actions[bot]"
+            git config --global user.email "github-actions[bot]@users.noreply.github.com"
+            git add ./README.md
+            git commit -m "release: ${release_tag} を正式リリース"
+            git push origin HEAD:main
+
+          fi
+
+      - name: 正式リリース
+        run: |
+          gh release edit "${{ steps.check_tag.outputs.release_tag }}" --draft=false --draft=false --prerelease=false --latest
