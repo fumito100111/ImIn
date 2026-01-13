@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Literal
 import os
 import enum
+import certifi
 import keyring
 from urllib.parse import urlparse
 from slack_bolt import App as SlackApp
@@ -10,6 +11,10 @@ from slack_sdk.errors import SlackApiError
 from ..utils import UserState, USER_STATE_LABELS
 from ..core import get_service
 from ..utils.db import get_users_by_state
+
+# SSL証明書のパスを設定
+os.environ['SSL_CERT_FILE'] = certifi.where()
+os.environ['REQUESTS_CA_BUNDLE'] = certifi.where()
 
 # SlackのセットアップについてのドキュメントURL
 SLACK_SETUP_DOCUMENT_URL: str = 'https://github.com/fumito100111/ImIn/blob/main/docs/SLACK_SETUP.md'
