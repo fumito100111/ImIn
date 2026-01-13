@@ -41,8 +41,8 @@
 ### インストーラーの実行
 
 お使いのMacに応じたインストーラーを以下のリンクからダウンロードしてください.
-- [ImIn Installer for macOS (Intel)](https://github.com/fumito100111/ImIn/releases/latest/download/ImIn_v0.1.0_macos_x86_64_Installer.dmg)
-- [ImIn Installer for macOS (Apple Silicon)](https://github.com/fumito100111/ImIn/releases/latest/download/ImIn_v0.1.0_macos_arm64_Installer.dmg)
+- [ImIn Installer for macOS (Intel)](https://github.com/fumito100111/ImIn/releases/latest/download/ImIn_v0.1.1_macos_x86_64_Installer.dmg)
+- [ImIn Installer for macOS (Apple Silicon)](https://github.com/fumito100111/ImIn/releases/latest/download/ImIn_v0.1.1_macos_arm64_Installer.dmg)
 
 > [!TIP]
 > デフォルトの設定では, ダウンロードフォルダにダウンロードされます.
