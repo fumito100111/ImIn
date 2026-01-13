@@ -1,6 +1,6 @@
 [project]
 name = "ImIn"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
     "customtkinter==5.2.2",
     "darkdetect==0.8.0",
